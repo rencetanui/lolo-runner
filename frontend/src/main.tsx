@@ -10,7 +10,7 @@ import SignupPage from "./pages/SignupPage"
 import AccountPage from "./pages/AccountPage"
 import ProtectedRoute from "./components/ProtectedRoute"
 import Layout from "./components/Layout"
-
+import ProfilePage from "./pages/ProfilePage"
 
 const queryClient = new QueryClient()
 
@@ -26,6 +26,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/signup" element={<SignupPage />} />
             <Route element={<ProtectedRoute />}>
               <Route path="/account" element={<AccountPage />} />
+              <Route path="/account/profile" element={<ProfilePage />} />
             </Route>
           </Route>
         </Routes>

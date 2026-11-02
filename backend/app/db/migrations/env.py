@@ -19,7 +19,7 @@ from app.core.config import settings
 from app.db.base import Base
 from app.modules.events import models
 from app.modules.auth import models as auth_models
-
+from app.modules.runners import models as runner_models
 config.set_main_option("sqlalchemy.url", settings.database_url) 
 # for 'autogenerate' support
 # from myapp import mymodel
