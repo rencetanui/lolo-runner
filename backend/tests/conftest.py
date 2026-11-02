@@ -11,7 +11,7 @@ from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
 from app.modules.events.models import Distance, Event
-
+from app.modules.auth import models as _auth_models
 
 @pytest.fixture
 def db():
