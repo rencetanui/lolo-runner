@@ -7,6 +7,6 @@ export default function ProtectedRoute() {
   const location = useLocation()
 
   if (isLoading) return <Skeleton className="m-4 mx-auto h-40 max-w-md" />
-  if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />
+  if (!user) return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />
   return <Outlet />
 }

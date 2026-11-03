@@ -17,3 +17,15 @@ export function registrationState(opens: string, closes: string) {
   if (today > closes) return "closed" as const
   return "open" as const
 }
+
+export function ageOn(dob: string, on: string) {
+  const d = new Date(`${dob}T00:00:00`)
+  const e = new Date(`${on}T00:00:00`)
+  let age = e.getFullYear() - d.getFullYear()
+  const m = e.getMonth() - d.getMonth()
+  if (m < 0 || (m === 0 && e.getDate() < d.getDate())) age--
+  return age
+}
+
+export const formatDateTime = (iso: string) =>
+  new Intl.DateTimeFormat("en-KE", { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso))

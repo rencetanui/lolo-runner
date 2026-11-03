@@ -1,8 +1,9 @@
 import { Link, useParams } from "react-router-dom"
 import { useEvent } from "@/api/events"
+import { useAvailability } from "@/api/registrations"
 import { RegistrationBadge } from "@/components/RegistrationBadge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatDate, formatKES, formatKm, registrationState } from "@/lib/format"
@@ -10,6 +11,7 @@ import { formatDate, formatKES, formatKm, registrationState } from "@/lib/format
 export default function EventDetailPage() {
   const { id = "" } = useParams()
   const { data: event, isLoading, error } = useEvent(id)
+  const { data: availability } = useAvailability(id)
 
   if (isLoading) return <Skeleton className="m-4 mx-auto h-64 max-w-3xl" />
 
@@ -26,6 +28,8 @@ export default function EventDetailPage() {
     )
 
   const isOpen = registrationState(event.registration_opens, event.registration_closes) === "open"
+  const spotsLeft = (distanceId: string) =>
+    availability?.find((a) => a.distance_id === distanceId)?.spots_left
 
   return (
     <main className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
@@ -41,23 +45,30 @@ export default function EventDetailPage() {
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Distances</h2>
-        {event.distances.map((d) => (
-          <Card key={d.id}>
-            <CardHeader className="flex-row items-center justify-between space-y-0">
-              <CardTitle>{d.name}</CardTitle>
-              <span className="font-semibold">{formatKES(d.fee)}</span>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              {formatKm(d.km)} · Minimum age {d.min_age} · {d.capacity} spots
-            </CardContent>
-          </Card>
-        ))}
+        {event.distances.map((d) => {
+          const left = spotsLeft(d.id)
+          const soldOut = left === 0
+          return (
+            <Card key={d.id}>
+              <CardHeader className="flex-row items-center justify-between space-y-0">
+                <CardTitle>{d.name}</CardTitle>
+                <span className="font-semibold">{d.fee === "0.00" ? "Free" : formatKES(d.fee)}</span>
+              </CardHeader>
+              <CardContent className="flex flex-wrap items-center justify-between gap-3">
+                <div className="text-sm text-muted-foreground">
+                  {formatKm(d.km)} · Minimum age {d.min_age}
+                  {left !== undefined && !soldOut && ` · ${left} spots left`}
+                </div>
+                {isOpen && !soldOut ? (
+                  <Link to={`/events/${event.id}/register?distance=${d.id}`} className={buttonVariants({ size: "sm" })}>Register</Link>
+                ) : (
+                  <Button size="sm" disabled>{soldOut ? "Sold out" : "Unavailable"}</Button>
+                )}
+              </CardContent>
+            </Card>
+          )
+        })}
       </section>
-
-      {/* Disabled until the registration flow exists */}
-      <Button size="lg" className="w-full sm:w-auto" disabled>
-        {isOpen ? "Register (coming soon)" : "Registration unavailable"}
-      </Button>
     </main>
   )
 }

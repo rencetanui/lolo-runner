@@ -8,7 +8,7 @@ def age_category(age: int, gender: str) -> str:
     if age < 18:
         return f"{prefix}U18"
     if age < 35:
-        return f"{prefix}18-35"
+        return f"{prefix}18-34"
     if age >=70:
         return f"{prefix}70+"
     low = (age // 5) * 5

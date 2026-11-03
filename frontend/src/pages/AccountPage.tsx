@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom"
 import { useMe } from "@/api/auth"
 import { useProfile } from "@/api/profile"
-import { Button } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { MyRegistrations } from "@/components/MyRegistration"
 
 export default function AccountPage() {
   const { data: user } = useMe()
@@ -34,12 +35,11 @@ export default function AccountPage() {
             </dl>
           )}
           {!isLoading && (
-            <Button asChild>
-              <Link to="/account/profile">{profile ? "Edit profile" : "Set up profile"}</Link>
-            </Button>
+            <Link to="/account/profile" className={buttonVariants()}>{profile ? "Edit profile" : "Set up profile"}</Link>
           )}
         </CardContent>
       </Card>
+      <MyRegistrations />
     </main>
   )
 }

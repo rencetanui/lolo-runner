@@ -1,6 +1,6 @@
 import { Link, Outlet } from "react-router-dom"
 import { useLogout, useMe } from "@/api/auth"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 
 export default function Layout() {
   const { data: user } = useMe()
@@ -20,8 +20,8 @@ export default function Layout() {
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" asChild><Link to="/login">Log in</Link></Button>
-              <Button size="sm" asChild><Link to="/signup">Sign up</Link></Button>
+              <Link to="/login" className={buttonVariants({ variant: "ghost", size: "sm" })}>Log in</Link>
+              <Link to="/signup" className={buttonVariants({ size: "sm" })}>Sign up</Link>
             </div>
           )}
         </nav>

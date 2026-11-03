@@ -13,6 +13,9 @@ from app.main import app
 from app.modules.events.models import Distance, Event
 from app.modules.auth import models as _auth_models
 from app.modules.runners import models as _runner_models
+from app.modules.registrations import models as _registration_models
+from app.modules.payments import models as _payment_models
+from app.modules.payments.providers.mpesa import MpesaError, MpesaProcessing, get_mpesa_client
 
 @pytest.fixture
 def db():
@@ -52,3 +55,29 @@ def make_event(db):
         db.commit()
         return event
     return _make
+
+class FakeMpesa:
+    def __init__(self):
+        self.pushes = []
+        self.fail_push = False
+        self.query_result = None          # None means "customer hasn't answered yet"
+
+    def stk_push(self, *, phone, amount, reference, description):
+        if self.fail_push:
+            raise MpesaError("simulated outage")
+        n = len(self.pushes) + 1
+        self.pushes.append({"phone": phone, "amount": amount, "reference": reference})
+        return {"MerchantRequestID": f"m_{n}", "CheckoutRequestID": f"ws_CO_{n}"}
+
+    def stk_query(self, checkout_request_id):
+        if self.query_result is None:
+            raise MpesaProcessing("The transaction is being processed")
+        return self.query_result
+
+
+@pytest.fixture
+def mpesa():
+    fake = FakeMpesa()
+    app.dependency_overrides[get_mpesa_client] = lambda: fake
+    yield fake
+    app.dependency_overrides.pop(get_mpesa_client, None)
