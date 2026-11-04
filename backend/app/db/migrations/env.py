@@ -22,7 +22,7 @@ from app.modules.auth import models as auth_models
 from app.modules.runners import models as runner_models
 from app.modules.registrations import models as registration_models
 from app.modules.payments import models as payment_models
-
+from app.modules.notifications import models as _notification_models  # noqa: F401
 
 config.set_main_option("sqlalchemy.url", settings.database_url) 
 # for 'autogenerate' support

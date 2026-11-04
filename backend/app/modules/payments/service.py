@@ -12,6 +12,7 @@ from app.modules.auth.models import User
 from app.modules.registrations.models import Registration, RegistrationStatus
 from app.modules.registrations.service import expire_stale
 from app.modules.runners.models import RunnerProfile
+from app.modules.notifications.service import notify_registration_confirmed
 
 from .models import Payment, PaymentStatus
 from .providers.mpesa import MpesaError, MpesaProcessing
@@ -115,6 +116,7 @@ def apply_result(
     else:
         reg.status = RegistrationStatus.confirmed
         reg.expires_at = None
+        notify_registration_confirmed(db, reg, payment)
     db.commit()
     return payment
 
@@ -255,3 +257,37 @@ def start_payment(db: Session, user: User, registration_id: uuid.UUID, data: Pay
     payment.checkout_request_id = resp["CheckoutRequestID"]
     db.commit()
     return payment
+
+def reconcile_pending(db: Session, mpesa, *, older_than: timedelta = timedelta(minutes=2), limit: int = 50) -> dict:
+    """Worker job: settle payments whose callback never arrived. Commits."""
+    cutoff = _now() - older_than
+    abandoned = db.execute(
+        update(Payment)
+        .where(
+            Payment.status == PaymentStatus.pending,
+            Payment.checkout_request_id.is_(None),
+            Payment.created_at < cutoff,
+        )
+        .values(status=PaymentStatus.failed, result_desc="Request never reached M-Pesa", completed_at=_now())
+    ).rowcount
+    db.commit()
+
+    stuck = list(
+        db.scalars(
+            select(Payment)
+            .where(
+                Payment.status == PaymentStatus.pending,
+                Payment.checkout_request_id.is_not(None),
+                Payment.created_at < cutoff,
+            )
+            .order_by(Payment.created_at)
+            .limit(limit)
+        )
+    )
+    settled = 0
+    for payment in stuck:
+        _refresh(db, payment, mpesa)
+        db.refresh(payment)
+        if payment.status != PaymentStatus.pending:
+            settled += 1
+    return {"abandoned": abandoned or 0, "settled": settled}

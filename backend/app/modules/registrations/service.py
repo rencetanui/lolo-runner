@@ -7,8 +7,9 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.modules.auth.models import User
-from app.modules.events.models import Event
+from app.modules.events.models import Event, EventStatus
 from app.modules.runners.models import RunnerProfile
+from app.modules.notifications.service import notify_registration_confirmed, notify_registration_cancelled
 from app.utils.age import age_on
 from app.utils.dates import today_ke
 
@@ -28,7 +29,7 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _holding_spot():
+def holding_spot():
     """Confirmed registrations, plus unpaid ones whose hold hasn't expired."""
     return or_(
         Registration.status == RegistrationStatus.confirmed,
@@ -58,11 +59,11 @@ def expire_stale(db: Session, *, event_id: uuid.UUID | None = None,
 
 def availability(db: Session, event_id: uuid.UUID) -> list[AvailabilityOut]:
     event = db.get(Event, event_id)
-    if not event:
+    if not event or event.status != EventStatus.published:
         raise RegistrationError("event_not_found", "Event not found", 404)
     rows = db.execute(
         select(Registration.distance_id, func.count())
-        .where(Registration.event_id == event_id, _holding_spot())
+        .where(Registration.event_id == event_id, holding_spot())
         .group_by(Registration.distance_id)
     ).all()
     taken = dict(rows)
@@ -80,7 +81,7 @@ def register(db: Session, user: User, event_id: uuid.UUID, data: RegistrationIn)
     # Lock the event row until commit: registrations for one event are processed
     # one at a time, so capacity and bib numbers can't be raced.
     event = db.scalars(select(Event).where(Event.id == event_id).with_for_update()).first()
-    if not event:
+    if not event or event.status != EventStatus.published:
         raise RegistrationError("event_not_found", "Event not found", 404)
 
     profile = db.scalars(
@@ -133,7 +134,7 @@ def register(db: Session, user: User, event_id: uuid.UUID, data: RegistrationIn)
     taken = db.scalar(
         select(func.count())
         .select_from(Registration)
-        .where(Registration.distance_id == distance.id, _holding_spot())
+        .where(Registration.distance_id == distance.id, holding_spot())
     )
     if taken >= distance.capacity:
         raise RegistrationError("sold_out", f"The {distance.name} is sold out.")
@@ -157,6 +158,9 @@ def register(db: Session, user: User, event_id: uuid.UUID, data: RegistrationIn)
     )
     db.add(registration)
     try:
+        if free:
+            db.flush()  # so we can send the confirmation email before commit
+            notify_registration_confirmed(db, registration)
         db.commit()
     except IntegrityError:
         db.rollback()
@@ -198,6 +202,7 @@ def cancel(db: Session, user: User, registration_id: uuid.UUID) -> Registration:
         raise RegistrationError("event_started", "This event has already started, so it can't be cancelled.")
     reg.status = RegistrationStatus.cancelled
     reg.cancelled_at = _now()
+    notify_registration_cancelled(db, reg)
     db.commit()
     db.refresh(reg)
     return reg

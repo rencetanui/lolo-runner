@@ -59,6 +59,12 @@ export default function RegistrationDetailPage() {
             </div>
           </div>
 
+          {reg.status === "confirmed" && (
+            <p className="text-sm text-muted-foreground">
+              A confirmation is on its way to your email and phone.
+            </p>
+          )}
+
           {pending && (
             <>
               <Alert>

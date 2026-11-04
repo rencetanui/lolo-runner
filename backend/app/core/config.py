@@ -20,4 +20,21 @@ class Settings(BaseSettings):
     mpesa_callback_secret: str = ""
     public_base_url: str = ""            # public HTTPS URL of this API (your tunnel URL in dev)
     
-settings = Settings()
+    app_name: str = "Lolo Runner"
+    frontend_url: str = "http://localhost:5173"
+
+    email_backend: str = "console"        # "console" (log only) or "smtp"
+    email_from: str = "no-reply@example.com"
+    email_from_name: str = "Lolo Runner"
+    smtp_host: str = "localhost"
+    smtp_port: int = 1025
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_starttls: bool = False
+
+    sms_backend: str = "console"          # "console" (log only) or "africastalking"
+    at_env: str = "sandbox"               # "sandbox" or "production"
+    at_username: str = "sandbox"
+    at_api_key: str = ""
+    at_sender_id: str = ""
+settings = Settings()   

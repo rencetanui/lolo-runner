@@ -16,6 +16,7 @@ from app.modules.runners import models as _runner_models
 from app.modules.registrations import models as _registration_models
 from app.modules.payments import models as _payment_models
 from app.modules.payments.providers.mpesa import MpesaError, MpesaProcessing, get_mpesa_client
+from app.modules.notifications import models as _notification_models  # noqa: F401
 
 @pytest.fixture
 def db():

@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres          # the user in DATABASE_URL
+      POSTGRES_PASSWORD: postgres      # the password
+      POSTGRES_DB: app_db              # the database name
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "1025:1025" # smtp
+      - "8025:8025" #web inbox
+
+volumes:
+  pgdata:

@@ -11,8 +11,17 @@ export default function Layout() {
       <header className="border-b">
         <nav className="mx-auto flex max-w-5xl items-center justify-between p-4">
           <Link to="/" className="font-bold">Lolo Runner</Link>
+          
           {user ? (
             <div className="flex items-center gap-3">
+              {(user.role === "organizer" || user.role === "admin") && (
+                <>
+                  <Link to="/organizer/events" className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                    Organizer dashboard
+                  </Link>
+                  <span className="text-sm text-muted-foreground">·</span>
+                </>
+              )}
               <Link to="/account" className="text-sm hover:underline">{user.full_name}</Link>
               <Button variant="outline" size="sm" onClick={() => logout.mutate()}>
                 Log out

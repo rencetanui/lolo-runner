@@ -4,6 +4,11 @@ import { BrowserRouter, Route, Routes } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 import "./index.css"
+
+import RoleRoute from "./components/organizer/RoleRoute"
+import OrganizerEventsPage from "./pages/OrganizerEventsPage"
+import OrganizerEventPage from "./pages/OrganizerEventPage"
+import OrganizerNewEventPage from "./pages/OrganizerNewEventPage"
 import EventsPage from "./pages/EventsPage"
 import EventDetailPage from "./pages/EventDetailPage"
 import LoginPage from "./pages/LoginPage"
@@ -33,6 +38,11 @@ createRoot(document.getElementById("root")!).render(
                 <Route path="/account/profile" element={<ProfilePage />} />
                 <Route path="/events/:id/register" element={<RegisterPage />} />
                 <Route path="/registrations/:id" element={<RegistrationDetailPage />} />
+                <Route element={<RoleRoute roles={["organizer", "admin"]} />}>
+                  <Route path="/organizer/events" element={<OrganizerEventsPage />} />
+                  <Route path="/organizer/events/new" element={<OrganizerNewEventPage />} />
+                  <Route path="/organizer/events/:id" element={<OrganizerEventPage />} />
+                </Route>
               </Route>
             </Route>
           </Routes>
