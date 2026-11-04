@@ -134,3 +134,38 @@ def event_reminder(
             f"{distance}, bib {bib}. Good luck!"
         ),
     )
+
+def email_verification(*, name: str, url: str, hours: int) -> Rendered:
+    intro = f"Hi {_first(name)}, please confirm your email address to finish setting up your {settings.app_name} account."
+    note = f"This link works for {hours} hours. If you didn't create an account, you can ignore this email."
+    return Rendered(
+        subject="Confirm your email address",
+        text="\n".join([intro, "", f"Confirm your email: {url}", "", note]),
+        html=_page("Confirm your email", [intro, note], ("Confirm email address", url)),
+    )
+
+
+def password_reset(*, name: str, url: str, minutes: int) -> Rendered:
+    intro = f"Hi {_first(name)}, we received a request to reset your {settings.app_name} password."
+    note = (
+        f"This link works once and expires in {minutes} minutes. If you didn't ask for this, "
+        "ignore this email and your password will stay the same."
+    )
+    return Rendered(
+        subject="Reset your password",
+        text="\n".join([intro, "", f"Choose a new password: {url}", "", note]),
+        html=_page("Reset your password", [intro, note], ("Choose a new password", url)),
+    )
+
+
+def password_changed(*, name: str, url: str) -> Rendered:
+    intro = f"Hi {_first(name)}, the password on your {settings.app_name} account was just changed."
+    note = (
+        "If that was you, there's nothing more to do. If it wasn't, reset your password "
+        "straight away and contact the organizers."
+    )
+    return Rendered(
+        subject="Your password was changed",
+        text="\n".join([intro, "", note, "", f"Reset your password: {url}"]),
+        html=_page("Password changed", [intro, note], ("Reset your password", url)),
+    )

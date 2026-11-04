@@ -17,6 +17,7 @@ from app.modules.registrations import models as _registration_models
 from app.modules.payments import models as _payment_models
 from app.modules.payments.providers.mpesa import MpesaError, MpesaProcessing, get_mpesa_client
 from app.modules.notifications import models as _notification_models  # noqa: F401
+from app.core.config import settings
 
 @pytest.fixture
 def db():
@@ -82,3 +83,8 @@ def mpesa():
     app.dependency_overrides[get_mpesa_client] = lambda: fake
     yield fake
     app.dependency_overrides.pop(get_mpesa_client, None)
+    
+@pytest.fixture(autouse=True)
+def _verification_off_by_default(monkeypatch):
+    # The security tests switch it back on. Everything else shouldn't need to verify emails.
+    monkeypatch.setattr(settings, "require_email_verification", False)

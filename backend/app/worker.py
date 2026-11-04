@@ -13,6 +13,7 @@ from app.modules.notifications.providers import get_email_sender, get_sms_sender
 from app.modules.payments import service as payments
 from app.modules.payments.providers.mpesa import get_mpesa_client
 from app.modules.registrations.service import expire_stale
+from app.modules.auth import service as auth_service
 
 log = logging.getLogger("worker")
 
@@ -44,6 +45,9 @@ def queue_reminders(db: Session):
 def purge_notifications(db: Session):
     return notifications.purge_old(db)
 
+def purge_security_data(db: Session):
+    return auth_service.purge_expired(db)
+
 
 JOBS = [
     Job("send_notifications", 5, send_notifications),
@@ -51,6 +55,7 @@ JOBS = [
     Job("settle_payments", 60, settle_payments),
     Job("queue_reminders", 600, queue_reminders),
     Job("purge_notifications", 3600, purge_notifications),
+    Job("purge_security_data", 3600, purge_security_data),
 ]
 
 

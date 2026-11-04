@@ -19,6 +19,10 @@ import Layout from "./components/Layout"
 import ProfilePage from "./pages/ProfilePage"
 import RegisterPage from "./pages/RegisterPage"
 import RegistrationDetailPage from "./pages/RegistrationDetailPage"
+import ChangePasswordPage from "./pages/ChangePasswordPage"
+import ForgotPasswordPage from "./pages/ForgotPasswordPage"
+import ResetPasswordPage from "./pages/ResetPasswordPage"
+import VerifyEmailPage from "./pages/VerifyEmailPage"
 
 const queryClient = new QueryClient()
 
@@ -33,11 +37,15 @@ createRoot(document.getElementById("root")!).render(
               <Route path="/events/:id" element={<EventDetailPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/verify-email" element={<VerifyEmailPage />} />
               <Route element={<ProtectedRoute />}>
                 <Route path="/account" element={<AccountPage />} />
                 <Route path="/account/profile" element={<ProfilePage />} />
                 <Route path="/events/:id/register" element={<RegisterPage />} />
                 <Route path="/registrations/:id" element={<RegistrationDetailPage />} />
+                <Route path="/account/password" element={<ChangePasswordPage />} />
                 <Route element={<RoleRoute roles={["organizer", "admin"]} />}>
                   <Route path="/organizer/events" element={<OrganizerEventsPage />} />
                   <Route path="/organizer/events/new" element={<OrganizerNewEventPage />} />

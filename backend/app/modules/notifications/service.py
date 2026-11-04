@@ -41,16 +41,19 @@ def _fmt(value) -> str:
 # ----------------------------------------------------------------- queueing
 # These functions only add rows to the caller's transaction. The caller commits, so a message
 # exists if and only if the change that caused it was saved.
-def _items(user: User, profile: RunnerProfile | None, rendered: templates.Rendered, key: str) -> list[dict]:
+def _items(
+    user: User, profile: RunnerProfile | None, rendered: templates.Rendered, key: str, sensitive: bool = False
+) -> list[dict]:
     items = [{
         "user_id": user.id, "channel": Channel.email, "to": user.email,
         "subject": rendered.subject, "text": rendered.text, "html": rendered.html,
-        "key": f"{key}:email",
+        "key": f"{key}:email", "sensitive": sensitive,
     }]
     if rendered.sms and profile and profile.phone:
         items.append({
             "user_id": user.id, "channel": Channel.sms, "to": profile.phone,
-            "subject": None, "text": rendered.sms, "html": None, "key": f"{key}:sms",
+            "subject": None, "text": rendered.sms, "html": None,
+            "key": f"{key}:sms", "sensitive": sensitive,
         })
     return items
 
@@ -73,6 +76,7 @@ def _enqueue_many(db: Session, items: list[dict]) -> int:
                 body_text=i["text"],
                 body_html=i["html"],
                 dedupe_key=i["key"],
+                sensitive=i.get("sensitive", False),
             ))
             added += 1
     return added
@@ -141,6 +145,34 @@ def notify_event_changed(db: Session, event: Event, changes: dict) -> None:
         log.info("Queued %s notifications for the update to event %s", _enqueue_many(db, items), event.id)
     except Exception:
         log.exception("Could not queue the update notices for event %s", event.id)
+
+
+def notify_email_verification(db: Session, user: User, token: str, token_id: uuid.UUID, hours: int) -> None:
+    try:
+        rendered = templates.email_verification(
+            name=user.full_name, url=_url(f"/verify-email?token={token}"), hours=hours
+        )
+        _enqueue_many(db, _items(user, None, rendered, f"email_verify:{token_id}", sensitive=True))
+    except Exception:
+        log.exception("Could not queue the verification email for user %s", user.id)
+
+
+def notify_password_reset(db: Session, user: User, token: str, token_id: uuid.UUID, minutes: int) -> None:
+    try:
+        rendered = templates.password_reset(
+            name=user.full_name, url=_url(f"/reset-password?token={token}"), minutes=minutes
+        )
+        _enqueue_many(db, _items(user, None, rendered, f"password_reset:{token_id}", sensitive=True))
+    except Exception:
+        log.exception("Could not queue the password reset email for user %s", user.id)
+
+
+def notify_password_changed(db: Session, user: User) -> None:
+    try:
+        rendered = templates.password_changed(name=user.full_name, url=_url("/forgot-password"))
+        _enqueue_many(db, _items(user, None, rendered, f"password_changed:{uuid.uuid4().hex}"))
+    except Exception:
+        log.exception("Could not queue the password-changed notice for user %s", user.id)
 
 
 def enqueue_event_reminders(db: Session, now: datetime | None = None) -> int:
@@ -238,6 +270,9 @@ def deliver(db: Session, notification_id: uuid.UUID, email_sender, sms_sender, n
             outcome = "sent"
 
     n.lease_until = None
+    if n.sensitive and n.status in (NotificationStatus.sent, NotificationStatus.failed):
+        n.body_text = "[redacted]"          # a working reset link must not sit in the outbox
+        n.body_html = None
     db.commit()
     return outcome
 

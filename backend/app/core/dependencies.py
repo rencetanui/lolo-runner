@@ -15,15 +15,20 @@ def get_current_user(
     unauthorized = HTTPException(status.HTTP_401_UNAUTHORIZED, "Not authenticated")
     if not access_token:
         raise unauthorized
-    sub = decode_access_token(access_token)
-    if not sub:
+        
+    decoded = decode_access_token(access_token)
+    if not decoded:
         raise unauthorized
+    
+    sub, version = decoded
     try:
         user = db.get(User, uuid.UUID(sub))
     except ValueError:
         raise unauthorized
-    if not user or not user.is_active:
+        
+    if not user or not user.is_active or user.token_version != version:
         raise unauthorized
+        
     return user
 
 

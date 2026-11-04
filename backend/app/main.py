@@ -7,6 +7,8 @@ from app.modules.organizer.router import router as organizer_router
 from app.modules.organizer.service import OrganizerError
 from app.modules.events.router import router as events_router
 from app.core.config import settings
+from app.core.rate_limit import RateLimitError
+from app.modules.auth.service import AuthError
 from app.modules.auth.router import router as auth_router
 from app.modules.runners.router import router as runners_router
 from app.modules.registrations.router import router as registrations_router
@@ -29,6 +31,34 @@ app.include_router(runners_router, prefix="/api/v1")
 app.include_router(registrations_router, prefix="/api/v1")
 app.include_router(payments_router, prefix="/api/v1")
 app.include_router(organizer_router, prefix="/api/v1")
+
+@app.exception_handler(RateLimitError)
+async def rate_limit_handler(request: Request, exc: RateLimitError):
+    minutes = -(-exc.retry_after // 60)
+    wait = f"{minutes} minute{'s' if minutes != 1 else ''}"
+    return JSONResponse(
+        status_code=429,
+        headers={"Retry-After": str(exc.retry_after)},      # ← this line
+        content={"detail": {"code": "rate_limited", "message": f"Too many attempts. Please try again in {wait}."}},
+    )
+
+@app.exception_handler(AuthError)
+async def auth_error_handler(request: Request, exc: AuthError):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": {"code": exc.code, "message": exc.message}},
+    )
+    
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("Referrer-Policy", "no-referrer")
+    path = request.url.path
+    public = request.method == "GET" and path.startswith("/api/v1/events")
+    if path.startswith("/api/v1") and not public:
+        response.headers["Cache-Control"] = "no-store"     # personal data shouldn't sit in browser caches
+    return response
 
 @app.exception_handler(OrganizerError)
 async def organizer_error_handler(request: Request, exc: OrganizerError):

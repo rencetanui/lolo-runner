@@ -39,6 +39,15 @@ export default function AccountPage() {
           )}
         </CardContent>
       </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Security</CardTitle>
+          <CardDescription>Keep your account safe.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Link to="/account/password" className={buttonVariants({ variant: "outline" })}>Change password</Link>
+        </CardContent>
+      </Card>
       <MyRegistrations />
     </main>
   )

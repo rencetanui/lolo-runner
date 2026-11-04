@@ -20,19 +20,27 @@ def verify_password(password: str, hashed: str) -> bool:
 DUMMY_HASH = hash_password("not-a-real-password")
 
 
-def create_access_token(user_id: str) -> str:
+def create_access_token(user_id: str, version: int) -> str:
     now = datetime.now(timezone.utc)
     payload = {
         "sub": user_id,
+        "ver": version,
         "iat": now,
         "exp": now + timedelta(minutes=settings.access_token_expire_minutes),
     }
     return jwt.encode(payload, settings.secret_key, algorithm="HS256")
 
 
-def decode_access_token(token: str) -> str | None:
+def decode_access_token(token: str) -> tuple[str, int] | None:
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=["HS256"])
     except jwt.PyJWTError:
         return None
-    return payload.get("sub")
+        
+    sub = payload.get("sub")
+    version = payload.get("ver")
+    
+    if sub is None or version is None:
+        return None
+        
+    return (str(sub), int(version))

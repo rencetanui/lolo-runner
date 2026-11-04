@@ -41,6 +41,7 @@ export default function LoginPage() {
               <Input id="password" type="password" autoComplete="current-password" required
                 value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
+            <Link to="/forgot-password" className="text-sm text-muted-foreground underline">Forgot your password?</Link>
             <Button type="submit" className="w-full" disabled={login.isPending}>
               {login.isPending ? "Logging in…" : "Log in"}
             </Button>

@@ -1,6 +1,7 @@
 import { Link, Outlet } from "react-router-dom"
 import { useLogout, useMe } from "@/api/auth"
 import { Button, buttonVariants } from "@/components/ui/button"
+import { VerifyEmailBanner } from "@/pages/VerifyEmailBanner"
 
 export default function Layout() {
   const { data: user } = useMe()
@@ -9,6 +10,8 @@ export default function Layout() {
   return (
     <>
       <header className="border-b">
+        <VerifyEmailBanner />
+        <Outlet />
         <nav className="mx-auto flex max-w-5xl items-center justify-between p-4">
           <Link to="/" className="font-bold">Lolo Runner</Link>
           

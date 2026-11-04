@@ -84,6 +84,11 @@ def register(db: Session, user: User, event_id: uuid.UUID, data: RegistrationIn)
     if not event or event.status != EventStatus.published:
         raise RegistrationError("event_not_found", "Event not found", 404)
 
+    if settings.require_email_verification and not user.email_verified:
+        raise RegistrationError(
+            "email_unverified",
+            "Please verify your email address before registering. Check your inbox for a verification link.", 403
+        )
     profile = db.scalars(
         select(RunnerProfile).where(RunnerProfile.user_id == user.id)
     ).first()

@@ -37,4 +37,8 @@ class Settings(BaseSettings):
     at_username: str = "sandbox"
     at_api_key: str = ""
     at_sender_id: str = ""
+    require_email_verification: bool = True
+    verify_token_hours: int = 48
+    reset_token_minutes: int = 60
+    trusted_proxies: int = 0     # how many reverse proxies sit in front of the API (0 in development)
 settings = Settings()   
