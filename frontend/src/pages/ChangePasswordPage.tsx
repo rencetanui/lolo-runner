@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
-import { useChangePassword } from "@/api/auth"
+import { useChangePassword, useMe } from "@/api/auth"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,6 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 export default function ChangePasswordPage() {
+
+  const { data: user } = useMe()
+
   const [current, setCurrent] = useState("")
   const [password, setPassword] = useState("")
   const [confirm, setConfirm] = useState("")
@@ -21,6 +24,20 @@ export default function ChangePasswordPage() {
     change.mutate(
       { current_password: current, new_password: password },
       { onSuccess: () => { setCurrent(""); setPassword(""); setConfirm("") } },
+    )
+  }
+
+    if (user && !user.has_password) {
+    return (
+      <main className="mx-auto max-w-md space-y-4 p-4 sm:p-6">
+        <Link to="/account" className="text-sm text-muted-foreground hover:underline">← My account</Link>
+        <Alert>
+          <AlertDescription>
+            You signed up with Google, so you don't have a password yet. If you'd like one,{" "}
+            <Link to="/forgot-password" className="underline">we'll email you a link to set it</Link>.
+          </AlertDescription>
+        </Alert>
+      </main>
     )
   }
 

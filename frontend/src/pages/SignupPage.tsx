@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { GoogleSignInButton } from "@/components/GoogleSignInButton"
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState("")
@@ -57,6 +58,9 @@ export default function SignupPage() {
               Already registered? <Link to="/login" className="underline">Log in</Link>
             </p>
           </form>
+          <div className="mt-4">
+            <GoogleSignInButton onSignedIn={() => navigate("/", { replace: true })} />
+          </div>
         </CardContent>
       </Card>
     </main>

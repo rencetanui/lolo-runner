@@ -9,11 +9,11 @@ export default function Layout() {
 
   return (
     <>
-      <header className="border-b">
+      <header className="border-b bg-background">
         <VerifyEmailBanner />
-        <Outlet />
+        {/* FIX 1: Dropped the duplicate nested <Outlet /> that was forcing page code to bleed inside the header area */}
         <nav className="mx-auto flex max-w-5xl items-center justify-between p-4">
-          <Link to="/" className="font-bold">Lolo Runner</Link>
+          <Link to="/" className="font-bold tracking-tight">Lolo Runner</Link>
           
           {user ? (
             <div className="flex items-center gap-3">
@@ -38,7 +38,11 @@ export default function Layout() {
           )}
         </nav>
       </header>
-      <Outlet />
+      
+      {/* FIX 2: Wrapped the authoritative page output mount path inside an isolated main container block layout */}
+      <main className="mx-auto max-w-5xl">
+        <Outlet />
+      </main>
     </>
   )
 }

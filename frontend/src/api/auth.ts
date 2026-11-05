@@ -106,3 +106,26 @@ export function useChangePassword() {
     },
   })
 }
+
+export function useGoogleConfig() {
+  return useQuery({
+    queryKey: ["google-config"],
+    queryFn: async () => {
+      const { data } = await api.GET("/api/v1/auth/google/config")
+      return data ?? { enabled: false, client_id: null }
+    },
+    staleTime: Infinity,
+  })
+}
+
+export function useGoogleLogin() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (credential: string) => {
+      const { data, error } = await api.POST("/api/v1/auth/google", { body: { credential } })
+      if (!data) throw toApiError(error, "Could not sign in with Google. Please try again.")
+      return data
+    },
+    onSuccess: (user) => qc.setQueryData(["me"], user),
+  })
+}
