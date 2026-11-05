@@ -174,7 +174,13 @@ def notify_password_changed(db: Session, user: User) -> None:
     except Exception:
         log.exception("Could not queue the password-changed notice for user %s", user.id)
 
-
+def notify_google_linked(db: Session, user: User) -> None:
+    try:
+        rendered = templates.google_linked(name=user.full_name, url=_url("/forgot-password"))
+        _enqueue_many(db, _items(user, None, rendered, f"google_linked:{uuid.uuid4().hex}"))
+    except Exception:
+        log.exception("Could not queue the Google-linked notice for user %s", user.id)
+        
 def enqueue_event_reminders(db: Session, now: datetime | None = None) -> int:
     """Worker job: queue "it's tomorrow" reminders. Commits.
 

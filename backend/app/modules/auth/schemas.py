@@ -47,4 +47,13 @@ class UserOut(BaseModel):
     email: EmailStr
     role: Role
     email_verified: bool
+    has_password: bool
     created_at: datetime
+    
+class GoogleLoginIn(BaseModel):
+    credential: str = Field(min_length=20, max_length=4096)
+
+
+class GoogleConfigOut(BaseModel):
+    enabled: bool
+    client_id: str | None

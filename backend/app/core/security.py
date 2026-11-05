@@ -1,11 +1,15 @@
 from datetime import datetime, timedelta, timezone
 
 import jwt
+import logging
 from pwdlib import PasswordHash
 
 from app.core.config import settings
 
 _hasher = PasswordHash.recommended()  # Argon2
+
+
+log = logging.getLogger("security")
 
 
 def hash_password(password: str) -> str:
@@ -34,7 +38,8 @@ def create_access_token(user_id: str, version: int) -> str:
 def decode_access_token(token: str) -> tuple[str, int] | None:
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=["HS256"])
-    except jwt.PyJWTError:
+    except jwt.PyJWTError as exc:
+        log.warning("session token rejected: %s", type(exc).__name__)
         return None
         
     sub = payload.get("sub")

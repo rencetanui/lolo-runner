@@ -169,3 +169,15 @@ def password_changed(*, name: str, url: str) -> Rendered:
         text="\n".join([intro, "", note, "", f"Reset your password: {url}"]),
         html=_page("Password changed", [intro, note], ("Reset your password", url)),
     )
+    
+def google_linked(*, name: str, url: str) -> Rendered:
+    intro = f"Hi {_first(name)}, Google sign-in was just added to your {settings.app_name} account."
+    note = (
+        "If that was you, there's nothing more to do. If it wasn't, reset your password "
+        "straight away and contact the organizers."
+    )
+    return Rendered(
+        subject="Google sign-in added to your account",
+        text="\n".join([intro, "", note, "", f"Reset your password: {url}"]),
+        html=_page("Google sign-in added", [intro, note], ("Reset your password", url)),
+    )

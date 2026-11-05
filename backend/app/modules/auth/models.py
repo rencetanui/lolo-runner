@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import BigInteger, DateTime, Enum, ForeignKey, String, func
+from sqlalchemy import BigInteger, DateTime, Enum, ForeignKey, String, func, UniqueConstraint, true
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -26,6 +26,8 @@ class User(Base):
     email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     # Bumped on every password change. Sessions carry the number they were issued with.
     token_version: Mapped[int] = mapped_column(default=0, server_default="0")
+    # False for accounts created through Google: they have a random password nobody knows.
+    has_password: Mapped[bool] = mapped_column(default=True, server_default=true())
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     @property
@@ -62,3 +64,15 @@ class RateLimit(Base):
     key: Mapped[str] = mapped_column(String(64), primary_key=True)       # hash of scope + identifier
     window_start: Mapped[int] = mapped_column(BigInteger, primary_key=True)   # unix seconds
     hits: Mapped[int] = mapped_column(default=0)
+    
+class UserIdentity(Base):
+    """A way to log in that lives outside our password system. Today: Google."""
+    __tablename__ = "user_identities"
+    __table_args__ = (UniqueConstraint("provider", "provider_user_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    provider: Mapped[str] = mapped_column(String(20))
+    provider_user_id: Mapped[str] = mapped_column(String(255))     # Google's stable "sub"
+    email_at_link: Mapped[str] = mapped_column(String(255))        # a record only: emails can change
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)

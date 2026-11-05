@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     mpesa_callback_secret: str = ""
     public_base_url: str = ""            # public HTTPS URL of this API (your tunnel URL in dev)
     
+    google_client_id: str = ""
+    
     app_name: str = "Lolo Runner"
     frontend_url: str = "http://localhost:5173"
 

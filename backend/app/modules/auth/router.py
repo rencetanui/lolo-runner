@@ -14,7 +14,7 @@ from . import service
 from .models import User
 from .schemas import (
     ChangePasswordIn, ForgotPasswordIn, LoginIn, MessageOut, ResetPasswordIn,
-    SignupIn, UserOut, VerifyEmailIn,
+    SignupIn, UserOut, VerifyEmailIn, GoogleConfigOut, GoogleLoginIn
 )
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -125,3 +125,18 @@ def change_password(
         raise
     _set_session_cookie(response, user)      # this device stays signed in; every other one is signed out
     return MessageOut(message="Your password has been changed. Other devices have been signed out.")
+
+@router.get("/google/config", response_model=GoogleConfigOut)
+def google_config():
+    return GoogleConfigOut(enabled=bool(settings.google_client_id), client_id=settings.google_client_id or None)
+
+
+@router.post("/google", response_model=UserOut)
+def google_login(data: GoogleLoginIn, request: Request, response: Response, db: Session = Depends(get_db)):
+    if not settings.google_client_id:
+        raise service.AuthError("google_not_configured", "Google sign-in isn't available.", 503)
+    # Generous: many phones share one mobile-carrier address.
+    hit(db, "google:ip", client_ip(request), limit=300, window=HOUR)
+    user = service.google_sign_in(db, data.credential)
+    _set_session_cookie(response, user)
+    return user
