@@ -10,7 +10,7 @@ from app.modules.auth.models import Role, User
 
 from . import service
 from .schemas import (
-    DistanceIn, DistanceUpdate, EventAdminOut, EventIn, EventSummaryOut, EventUpdate, ParticipantPage,
+    DistanceIn, DistanceUpdate, EventAdminOut, EventIn, EventSummaryOut, EventUpdate, ParticipantPage, CancelEventIn, CancelPreviewOut
 )
 
 router = APIRouter(prefix="/organizer/events", tags=["Organizer"])
@@ -91,3 +91,12 @@ def participants_csv(event_id: uuid.UUID, user: OrganizerUser, db: DB):
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+    
+@router.get("/{event_id}/cancel-preview", response_model=CancelPreviewOut)
+def cancel_preview(event_id: uuid.UUID, user: OrganizerUser, db: DB):
+    return service.cancel_preview(db, user, event_id)
+
+
+@router.post("/{event_id}/cancel", response_model=EventAdminOut)
+def cancel_event(event_id: uuid.UUID, data: CancelEventIn, user: OrganizerUser, db: DB):
+    return service.cancel_event(db, user, event_id, data.reason)

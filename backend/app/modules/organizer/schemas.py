@@ -37,6 +37,7 @@ class EventIn(BaseModel):
     location: str = Field(min_length=2, max_length=150)
     registration_opens: date
     registration_closes: date
+    refunds_until: date | None = None
     distances: list[DistanceIn] = Field(default_factory=list, max_length=10)
 
     @field_validator("distances")
@@ -56,6 +57,7 @@ class EventUpdate(BaseModel):
     location: str | None = Field(default=None, min_length=2, max_length=150)
     registration_opens: date | None = None
     registration_closes: date | None = None
+    refunds_until: date | None = None
 
 
 # ----------------------------------------------------------------- output
@@ -78,11 +80,14 @@ class EventAdminOut(BaseModel):
     location: str
     registration_opens: date
     registration_closes: date
+    refunds_until: date | None
     status: EventStatus
+    cancelled_at: datetime | None
+    cancellation_reason: str | None
     confirmed: int
     held: int
     distances: list[DistanceAdminOut]
-
+    
 
 class EventSummaryOut(BaseModel):
     id: uuid.UUID
@@ -114,3 +119,13 @@ class ParticipantOut(BaseModel):
 class ParticipantPage(BaseModel):
     items: list[ParticipantOut]
     total: int
+    
+class CancelEventIn(BaseModel):
+    reason: str = Field(min_length=10, max_length=500, description="Shown to everyone who registered.")
+
+
+class CancelPreviewOut(BaseModel):
+    registrations: int
+    paid_registrations: int
+    refund_total: Decimal
+    

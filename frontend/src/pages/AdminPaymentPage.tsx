@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import {
-  useAdminPayment, useRecheckPayment, useResolvePayment, type AdminPaymentDetail,
+  useAdminPayment, useRecheckPayment, useResolvePayment, useCreateRefund, type AdminPaymentDetail,
 } from "@/api/admin"
 import { PaymentStatusBadge } from "@/components/admin/PaymentStatusBadge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -79,6 +79,43 @@ function ResolveForm({ payment }: { payment: AdminPaymentDetail }) {
   )
 }
 
+function RefundSection({ payment }: { payment: AdminPaymentDetail }) {
+  const create = useCreateRefund(payment.id)
+  const [note, setNote] = useState("")
+  const live = payment.refunds.some((r) => r.status !== "rejected")
+
+  return (
+    <section className="space-y-3">
+      <h2 className="text-lg font-semibold">Refunds</h2>
+      {payment.refunds.length === 0 && <p className="text-sm text-muted-foreground">No refunds for this payment.</p>}
+      <ul className="space-y-2 text-sm">
+        {payment.refunds.map((r) => (
+          <li key={r.id} className="rounded-md border p-3">
+            <Link to={`/admin/refunds/${r.id}`} className="underline">{formatKES(r.amount)} · {r.status}</Link>
+            <span className="text-muted-foreground"> · {formatDateTime(r.created_at)}{r.mpesa_reference && ` · ${r.mpesa_reference}`}</span>
+          </li>
+        ))}
+      </ul>
+      {payment.status === "succeeded" && !live && (
+        <form
+          className="space-y-2"
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (window.confirm(`Start a full refund of ${formatKES(payment.amount)} to ${payment.phone}?`)) create.mutate(note.trim())
+          }}
+        >
+          <Label htmlFor="refund-note">Reason for refunding this payment</Label>
+          <Textarea id="refund-note" rows={2} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} />
+          {create.error && <Alert variant="destructive"><AlertDescription>{create.error.message}</AlertDescription></Alert>}
+          <Button type="submit" variant="outline" disabled={note.trim().length < 10 || create.isPending}>
+            {create.isPending ? "Starting…" : "Start a full refund"}
+          </Button>
+        </form>
+      )}
+    </section>
+  )
+}
+
 export default function AdminPaymentPage() {
   const { id = "" } = useParams()
   const { data: p, isLoading, error } = useAdminPayment(id)
@@ -132,6 +169,8 @@ export default function AdminPaymentPage() {
           )}
 
           {p.status === "needs_review" && <ResolveForm payment={p} />}
+
+          <RefundSection payment={p} />
 
           <section className="space-y-2">
             <h2 className="text-lg font-semibold">History</h2>

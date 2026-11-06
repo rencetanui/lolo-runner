@@ -7,13 +7,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatDate, formatDateTime, formatKES } from "@/lib/format"
 import { PaymentPanel } from "@/components/PaymentPanel"
+import { RefundPanel, useCancellationPreview } from "@/api/refunds"
 
 export default function RegistrationDetailPage() {
   const { id = "" } = useParams()
   const navigate = useNavigate()
   const { data: reg, isLoading, error } = useRegistration(id)
+  const { data: preview } = useCancellationPreview(id, !!reg && reg.status !== "cancelled")
   const cancel = useCancelRegistration()
-
+  
   if (isLoading) return <Skeleton className="m-4 mx-auto h-64 max-w-2xl" />
   if (error || !reg)
     return (
@@ -25,8 +27,16 @@ export default function RegistrationDetailPage() {
   const pending = reg.status === "pending_payment"
   const cancelled = reg.status === "cancelled"
 
+  function cancelMessage() {
+    if (preview?.refundable)
+      return `Cancel this registration? A refund of ${formatKES(preview.amount!)} will be sent to the M-Pesa number you paid from.`
+    if (preview?.paid)
+      return "Cancel this registration? Your entry fee will NOT be refunded: the refund period has ended or this event doesn't offer refunds. Your spot will be released."
+    return "Cancel this registration? Your spot will be released."
+  }
+
   function onCancel() {
-    if (window.confirm("Cancel this registration? Your spot will be released.")) {
+    if (window.confirm(cancelMessage())) {
       cancel.mutate(reg!.id, { onSuccess: () => navigate("/account") })
     }
   }
@@ -59,6 +69,8 @@ export default function RegistrationDetailPage() {
             </div>
           </div>
 
+          {cancelled && <RefundPanel registrationId={reg.id} />}
+
           {reg.status === "confirmed" && (
             <p className="text-sm text-muted-foreground">
               A confirmation is on its way to your email and phone.
@@ -78,6 +90,13 @@ export default function RegistrationDetailPage() {
           )}
           {cancel.error && (
             <Alert variant="destructive"><AlertDescription>{cancel.error.message}</AlertDescription></Alert>
+          )}
+          {reg.status === "confirmed" && preview?.paid && (
+            <p className="text-sm text-muted-foreground">
+              {preview.refunds_until
+                ? `Refunds available until ${formatDate(preview.refunds_until)}.`
+                : "This event's entries are non-refundable."}
+            </p>
           )}
           {!cancelled && (
             <Button variant="outline" onClick={onCancel} disabled={cancel.isPending}>

@@ -23,6 +23,10 @@ import ChangePasswordPage from "./pages/ChangePasswordPage"
 import ForgotPasswordPage from "./pages/ForgotPasswordPage"
 import ResetPasswordPage from "./pages/ResetPasswordPage"
 import VerifyEmailPage from "./pages/VerifyEmailPage"
+import AdminPaymentPage from "./pages/AdminPaymentPage"
+import AdminPaymentsPage from "./pages/AdminPaymentsPage"
+import AdminRefundPage from "./pages/AdminRefundPage"
+import AdminRefundsPage from "./pages/AdminRefundsPage"
 import { Navigate } from "react-router-dom"
 
 const queryClient = new QueryClient()
@@ -56,6 +60,8 @@ createRoot(document.getElementById("root")!).render(
                   <Route path="/admin" element={<Navigate to="/admin/payments" replace />} />
                   <Route path="/admin/payments" element={<AdminPaymentsPage />} />
                   <Route path="/admin/payments/:id" element={<AdminPaymentPage />} />
+                  <Route path="/admin/refunds" element={<AdminRefundsPage />} />
+                  <Route path="/admin/refunds/:id" element={<AdminRefundPage />} />
                 </Route>
               </Route>
             </Route>

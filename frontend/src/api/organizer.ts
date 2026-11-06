@@ -153,3 +153,30 @@ export function useParticipants(id: string, page: number, pageSize: number) {
     placeholderData: keepPreviousData,
   })
 }
+
+export function useCancelPreview(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["organizer", "cancel-preview", id],
+    enabled,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/api/v1/organizer/events/{event_id}/cancel-preview", { params: { path: { event_id: id } } }),
+        "Could not load the cancellation details",
+      ),
+  })
+}
+
+export function useCancelEvent(id: string) {
+  const after = useAfterChange()
+  return useMutation({
+    mutationFn: async (reason: string) =>
+      unwrap(
+        await api.POST("/api/v1/organizer/events/{event_id}/cancel", {
+          params: { path: { event_id: id } },
+          body: { reason },
+        }),
+        "Could not cancel the event",
+      ),
+    onSuccess: after,
+  })
+}

@@ -107,8 +107,7 @@ def notify_registration_confirmed(db: Session, reg: Registration, payment=None) 
         # A notification problem must never undo a confirmed payment or registration.
         log.exception("Could not queue the confirmation for registration %s", reg.id)
 
-
-def notify_registration_cancelled(db: Session, reg: Registration) -> None:
+def notify_registration_cancelled(db: Session, reg: Registration, refund=None, paid_no_refund: bool = False) -> None:
     try:
         user, profile = _contact(db, reg.user_id)
         rendered = templates.registration_cancelled(
@@ -116,10 +115,105 @@ def notify_registration_cancelled(db: Session, reg: Registration) -> None:
             event_name=reg.event.name,
             distance=reg.distance.name,
             url=_url(f"/events/{reg.event_id}"),
+            refund_amount=refund.amount if refund else None,
+            refund_phone=refund.phone if refund else None,
+            no_refund=paid_no_refund,
         )
         _enqueue_many(db, _items(user, profile, rendered, f"registration_cancelled:{reg.id}"))
     except Exception:
         log.exception("Could not queue the cancellation notice for registration %s", reg.id)
+
+
+def _people(db: Session, user_ids) -> dict:
+    """user id -> (User, RunnerProfile | None), fetched in chunks."""
+    ids = list(user_ids)
+    out: dict = {}
+    for start in range(0, len(ids), KEY_CHUNK):
+        chunk = ids[start:start + KEY_CHUNK]
+        users = list(db.scalars(select(User).where(User.id.in_(chunk))))
+        profiles = {p.user_id: p for p in db.scalars(select(RunnerProfile).where(RunnerProfile.user_id.in_(chunk)))}
+        for user in users:
+            out[user.id] = (user, profiles.get(user.id))
+    return out
+
+
+def notify_event_cancelled(db: Session, event: Event, regs: list, refunds_by_reg: dict) -> None:
+    try:
+        people = _people(db, {r.user_id for r in regs})
+        items: list[dict] = []
+        for reg in regs:
+            person = people.get(reg.user_id)
+            if not person:
+                continue
+            user, profile = person
+            refund = refunds_by_reg.get(reg.id)
+            rendered = templates.event_cancelled(
+                name=user.full_name, event_name=event.name, event_date=event.event_date,
+                reason=event.cancellation_reason or "",
+                refund_amount=refund.amount if refund else None,
+                refund_phone=refund.phone if refund else None,
+                url=_url(f"/events/{event.id}"),
+            )
+            items += _items(user, profile, rendered, f"event_cancelled:{event.id}:{reg.id}")
+        _enqueue_many(db, items)
+    except Exception:
+        log.exception("Could not queue the cancellation notices for event %s", event.id)
+
+
+def notify_admins_refunds_queued(db: Session, event: Event, count: int, total) -> None:
+    try:
+        admins = list(db.scalars(select(User).where(User.role == Role.admin, User.is_active.is_(True))))
+        rendered = templates.refunds_queued_alert(
+            event_name=event.name, count=count, total=total, url=_url("/admin/refunds")
+        )
+        items: list[dict] = []
+        for admin in admins:
+            items += _items(admin, None, rendered, f"refunds_queued:{event.id}:{admin.id}")
+        _enqueue_many(db, items)
+    except Exception:
+        log.exception("Could not queue the refunds alert for event %s", event.id)
+
+
+def _refund_context(db: Session, refund):
+    reg = db.get(Registration, refund.registration_id)
+    user, profile = _contact(db, refund.user_id)
+    return reg, user, profile
+
+
+def notify_refund_requested(db: Session, refund) -> None:
+    try:
+        reg, user, profile = _refund_context(db, refund)
+        rendered = templates.refund_requested(
+            name=user.full_name, event_name=reg.event.name, amount=refund.amount,
+            phone=refund.phone, url=_url(f"/registrations/{reg.id}"),
+        )
+        _enqueue_many(db, _items(user, profile, rendered, f"refund_requested:{refund.id}"))
+    except Exception:
+        log.exception("Could not queue the refund-requested notice for refund %s", refund.id)
+
+
+def notify_refund_paid(db: Session, refund) -> None:
+    try:
+        reg, user, profile = _refund_context(db, refund)
+        rendered = templates.refund_paid(
+            name=user.full_name, event_name=reg.event.name, amount=refund.amount, phone=refund.phone,
+            reference=refund.mpesa_reference or "", url=_url(f"/registrations/{reg.id}"),
+        )
+        _enqueue_many(db, _items(user, profile, rendered, f"refund_paid:{refund.id}"))
+    except Exception:
+        log.exception("Could not queue the refund-paid notice for refund %s", refund.id)
+
+
+def notify_refund_rejected(db: Session, refund) -> None:
+    try:
+        reg, user, profile = _refund_context(db, refund)
+        rendered = templates.refund_rejected(
+            name=user.full_name, event_name=reg.event.name, amount=refund.amount,
+            reason=refund.admin_note or "", url=_url(f"/registrations/{reg.id}"),
+        )
+        _enqueue_many(db, _items(user, profile, rendered, f"refund_rejected:{refund.id}"))
+    except Exception:
+        log.exception("Could not queue the refund-rejected notice for refund %s", refund.id)
 
 
 def notify_event_changed(db: Session, event: Event, changes: dict) -> None:

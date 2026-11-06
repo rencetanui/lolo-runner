@@ -10,6 +10,7 @@ from app.modules.auth.models import User
 from app.modules.events.models import Event, EventStatus
 from app.modules.runners.models import RunnerProfile
 from app.modules.notifications.service import notify_registration_confirmed, notify_registration_cancelled
+from app.modules.refunds.service import refund_for_runner_cancellation
 from app.utils.age import age_on
 from app.utils.dates import today_ke
 
@@ -59,8 +60,11 @@ def expire_stale(db: Session, *, event_id: uuid.UUID | None = None,
 
 def availability(db: Session, event_id: uuid.UUID) -> list[AvailabilityOut]:
     event = db.get(Event, event_id)
+    if event and event.status == EventStatus.cancelled:
+        raise RegistrationError("event_cancelled", "This event has been cancelled.", 409)
     if not event or event.status != EventStatus.published:
         raise RegistrationError("event_not_found", "Event not found", 404)
+    
     rows = db.execute(
         select(Registration.distance_id, func.count())
         .where(Registration.event_id == event_id, holding_spot())
@@ -81,9 +85,11 @@ def register(db: Session, user: User, event_id: uuid.UUID, data: RegistrationIn)
     # Lock the event row until commit: registrations for one event are processed
     # one at a time, so capacity and bib numbers can't be raced.
     event = db.scalars(select(Event).where(Event.id == event_id).with_for_update()).first()
+    if event and event.status == EventStatus.cancelled:
+        raise RegistrationError("event_cancelled", "This event has been cancelled.", 409)
     if not event or event.status != EventStatus.published:
         raise RegistrationError("event_not_found", "Event not found", 404)
-
+    
     if settings.require_email_verification and not user.email_verified:
         raise RegistrationError(
             "email_unverified",
@@ -205,9 +211,11 @@ def cancel(db: Session, user: User, registration_id: uuid.UUID) -> Registration:
         return reg  # idempotent
     if reg.event.event_date <= today_ke():
         raise RegistrationError("event_started", "This event has already started, so it can't be cancelled.")
+    was_paid = reg.status == RegistrationStatus.confirmed and reg.fee_amount > 0
     reg.status = RegistrationStatus.cancelled
     reg.cancelled_at = _now()
-    notify_registration_cancelled(db, reg)
+    refund = refund_for_runner_cancellation(db, reg, was_paid=was_paid, actor=user)
+    notify_registration_cancelled(db, reg, refund=refund, paid_no_refund=was_paid and refund is None)
     db.commit()
     db.refresh(reg)
     return reg

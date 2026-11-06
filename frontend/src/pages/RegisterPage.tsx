@@ -90,11 +90,20 @@ export default function RegisterPage() {
         <CardHeader>
           <CardTitle>{event.name} · {distance.name}</CardTitle>
         </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">
-          {formatDate(event.event_date)} · {event.location}
-          <div className="mt-1 font-medium text-foreground">
+        <CardContent className="text-sm text-muted-foreground space-y-2">
+          <div>
+            {formatDate(event.event_date)} · {event.location}
+          </div>
+          <div className="font-medium text-foreground">
             {distance.fee === "0.00" ? "Free entry" : `Entry fee ${formatKES(distance.fee)}`}
           </div>
+          {distance.fee !== "0.00" && (
+            <p className="text-sm text-muted-foreground pt-1">
+              {event.refunds_until
+                ? `Refund policy: full refund if you cancel on or before ${formatDate(event.refunds_until)}.`
+                : "Refund policy: entries for this event are non-refundable."}
+            </p>
+          )}
         </CardContent>
       </Card>
 

@@ -3,6 +3,7 @@ from datetime import date
 from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict
+from .models import EventStatus
 
 
 class DistanceOut(BaseModel):
@@ -26,3 +27,6 @@ class EventOut(BaseModel):
     registration_opens: date
     registration_closes: date
     distances: list[DistanceOut]
+    status: EventStatus
+    refunds_until: date | None
+    cancellation_reason: str | None

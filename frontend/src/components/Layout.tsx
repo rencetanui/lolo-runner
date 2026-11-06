@@ -9,7 +9,7 @@ export default function Layout() {
   const { data: user } = useMe()
   const logout = useLogout()
   const { data: attention } = useAdminSummary(user?.role === "admin")
-  const alerts = attention ? attention.needs_review + attention.needs_refund + attention.stuck_pending : 0
+  const alerts = attention ? attention.needs_review + attention.needs_refund + attention.stuck_pending + attention.refunds_requested : 0
 
   return (
     <>
@@ -17,8 +17,9 @@ export default function Layout() {
         <VerifyEmailBanner />
         {/* FIX 1: Dropped the duplicate nested <Outlet /> that was forcing page code to bleed inside the header area */}
         <nav className="mx-auto flex max-w-5xl items-center justify-between p-4">
-          <Link to="/" className="font-bold tracking-tight">Lolo Runner</Link>
-          
+          <Link to="/" className="flex items-center">
+            <img src="/logo.png" alt="Lolo Runner" className="h-10 w-auto" />
+          </Link>
           {user ? (
             <div className="flex items-center gap-3">
               {(user.role === "organizer" || user.role === "admin") && (

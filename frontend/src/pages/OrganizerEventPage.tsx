@@ -7,8 +7,9 @@ import { DistanceManager } from "@/components/organizer/DistanceManager"
 import {
   EventDetailsFields, detailsError, toDetails, type EventDetails,
 } from "@/components/organizer/EventDetailsFields"
+import { CancelEventSection } from "@/components/organizer/CancelEventSection"
 import { ParticipantsTable } from "@/components/organizer/ParticipantsTable"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -25,6 +26,21 @@ function EventEditor({ event }: { event: OrganizerEvent }) {
 
   const published = event.status === "published"
   const dirty = JSON.stringify(details) !== JSON.stringify(toDetails(event))
+
+    if (event.status === "cancelled") {
+      return (
+        <>
+          <header className="space-y-2">
+            <h1 className="text-2xl font-bold sm:text-3xl">{event.name}</h1>
+            <Badge variant="destructive">Cancelled</Badge>
+          </header>
+          <Alert variant="destructive">
+            <AlertTitle>This event was cancelled</AlertTitle>
+            <AlertDescription>{event.cancellation_reason}</AlertDescription>
+          </Alert>
+        </>
+      )
+    }
 
   function onSave(e: React.FormEvent) {
     e.preventDefault()
@@ -90,6 +106,8 @@ function EventEditor({ event }: { event: OrganizerEvent }) {
 
       <DistanceManager event={event} />
       <ParticipantsTable eventId={event.id} />
+
+      {published && <CancelEventSection event={event} />}
 
       <section className="space-y-2 border-t pt-6">
         <h2 className="text-lg font-semibold">Delete event</h2>

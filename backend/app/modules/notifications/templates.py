@@ -33,6 +33,14 @@ def _sms(text: str) -> str:
     return unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()[:300]
 
 
+def _money(amount) -> str:
+    return f"KES {int(amount):,}"
+
+
+def _mask(phone: str) -> str:
+    return phone if len(phone) <= 7 else phone[:4] + "*" * (len(phone) - 7) + phone[-3:]
+
+
 def _page(title: str, paragraphs: list[str], button: tuple[str, str] | None = None) -> str:
     """Every piece of text is escaped, so organizer- and runner-entered values can't inject HTML."""
     e = html.escape
@@ -45,6 +53,13 @@ def _page(title: str, paragraphs: list[str], button: tuple[str, str] | None = No
             'style="background:#111;color:#fff;padding:10px 18px;border-radius:6px;'
             f'text-decoration:none">{e(label)}</a></p>'
         )
+    logo = ""
+    if settings.frontend_url.startswith("https://"):      # a localhost image can't load in a real inbox
+        logo = (
+            f'<img src="{e(settings.frontend_url.rstrip("/"))}/logo.png" alt="{e(settings.app_name)}" '
+            'height="40" style="display:block;margin:0 0 20px">'
+        )
+        
     return (
         '<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;padding:16px;color:#111">'
         f'<h2 style="margin:0 0 16px">{e(title)}</h2>{body}{cta}'
@@ -82,19 +97,96 @@ def registration_confirmed(
     )
 
 
-def registration_cancelled(*, name: str, event_name: str, distance: str, url: str) -> Rendered:
+def registration_cancelled(
+    *, name: str, event_name: str, distance: str, url: str,
+    refund_amount=None, refund_phone: str | None = None, no_refund: bool = False,
+) -> Rendered:
     first = _first(name)
     intro = f"Hi {first}, your registration for {event_name} ({distance}) has been cancelled."
-    note = "If you had already paid, please contact the organizers about a refund."
+    notes: list[str] = []
+    if refund_amount is not None:
+        notes.append(
+            f"A refund of {_money(refund_amount)} has been requested. It will be sent to the M-Pesa number "
+            f"you paid from ({_mask(refund_phone or '')}), and we'll email you when it's on its way."
+        )
+    elif no_refund:
+        notes.append("The refund period for this event had ended, so your entry fee isn't refundable.")
     again = "Changed your mind? You can register again while registration is open."
     return Rendered(
         subject=f"Registration cancelled: {event_name}",
-        text="\n".join([intro, "", note, again, "", f"Event page: {url}"]),
-        html=_page("Registration cancelled", [intro, note, again], ("View event", url)),
+        text="\n".join([intro, "", *notes, again, "", f"Event page: {url}"]),
+        html=_page("Registration cancelled", [intro, *notes, again], ("View event", url)),
         sms=None,      # email only: no SMS cost for a cancellation
+    )
+def refund_requested(*, name: str, event_name: str, amount, phone: str, url: str) -> Rendered:
+    intro = f"Hi {_first(name)}, we've started a refund of {_money(amount)} for {event_name}."
+    note = (
+        f"It will be sent to the M-Pesa number you paid from ({_mask(phone)}). "
+        "We'll email and text you when it's on its way."
+    )
+    return Rendered(
+        subject=f"Refund requested: {event_name}",
+        text="\n".join([intro, "", note, "", f"Details: {url}"]),
+        html=_page("Refund requested", [intro, note], ("View details", url)),
     )
 
 
+def refund_paid(*, name: str, event_name: str, amount, phone: str, reference: str, url: str) -> Rendered:
+    intro = f"Hi {_first(name)}, your refund of {_money(amount)} for {event_name} has been sent."
+    lines = [f"Sent to: {_mask(phone)}", f"M-Pesa reference: {reference}"]
+    return Rendered(
+        subject=f"Refund sent: {event_name}",
+        text="\n".join([intro, "", *lines, "", f"Details: {url}"]),
+        html=_page("Refund sent", [intro, *lines], ("View details", url)),
+        sms=_sms(
+            f"{settings.app_name}: refund of {_money(amount)} sent to {_mask(phone)} for "
+            f"{_clip(event_name, 40)}. M-Pesa ref {reference}."
+        ),
+    )
+
+
+def refund_rejected(*, name: str, event_name: str, amount, reason: str, url: str) -> Rendered:
+    intro = f"Hi {_first(name)}, we couldn't approve the refund of {_money(amount)} for {event_name}."
+    why = f"Reason: {reason}"
+    note = "If you think this is a mistake, please contact the organizers."
+    return Rendered(
+        subject=f"Refund not approved: {event_name}",
+        text="\n".join([intro, "", why, note, "", f"Details: {url}"]),
+        html=_page("Refund not approved", [intro, why, note], ("View details", url)),
+    )
+
+
+def event_cancelled(
+    *, name: str, event_name: str, event_date: date, reason: str,
+    refund_amount, refund_phone: str | None, url: str,
+) -> Rendered:
+    intro = f"Hi {_first(name)}, we're sorry to tell you that {event_name} on {fmt_date(event_date)} has been cancelled by the organizers."
+    lines = [f"Reason: {reason}"] if reason else []
+    sms_text = f"{settings.app_name}: {_clip(event_name, 40)} on {fmt_date(event_date)} is cancelled."
+    if refund_amount is not None:
+        refund = (
+            f"Your entry fee of {_money(refund_amount)} will be refunded in full to the M-Pesa number you paid "
+            f"from ({_mask(refund_phone or '')}). We'll message you when it's sent."
+        )
+        lines.append(refund)
+        sms_text += f" {_money(refund_amount)} refund coming to {_mask(refund_phone or '')}."
+    return Rendered(
+        subject=f"Event cancelled: {event_name}",
+        text="\n".join([intro, "", *lines, "", f"Details: {url}"]),
+        html=_page("Event cancelled", [intro, *lines], ("View details", url)),
+        sms=_sms(sms_text),
+    )
+
+
+def refunds_queued_alert(*, event_name: str, count: int, total, url: str) -> Rendered:
+    title = "Refunds to send"
+    lines = [f"Event: {event_name}", f"Refunds: {count}", f"Total: {_money(total)}"]
+    return Rendered(
+        subject=f"{count} refund(s) to send: {event_name}",
+        text="\n".join([title, "", *lines, "", f"Open the queue: {url}"]),
+        html=_page(title, lines, ("Open refunds", url)),
+    )
+    
 def event_changed(*, name: str, event_name: str, changes: list[tuple[str, str, str]], url: str) -> Rendered:
     first = _first(name)
     intro = f"Hi {first}, the organizers have updated {event_name}."

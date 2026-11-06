@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { PAGE_SIZE, useAdminPayments, useAdminSummary, type PaymentFilters, type PaymentStatus } from "@/api/admin"
 import { PaymentStatusBadge } from "@/components/admin/PaymentStatusBadge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -7,6 +7,7 @@ import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatDateTime, formatKES } from "@/lib/format"
+import { AdminNav } from "@/components/admin/AdminNav"
 
 function Tile({ label, value, alert, onClick }: { label: string; value: number; alert?: boolean; onClick: () => void }) {
   return (
@@ -22,6 +23,7 @@ export default function AdminPaymentsPage() {
   const [search, setSearch] = useState("")
   const [range, setRange] = useState({ start: "", end: "" })
   const summary = useAdminSummary()
+  const navigate = useNavigate()
   const { data, isLoading, error } = useAdminPayments(filters)
   const pages = Math.max(1, Math.ceil((data?.total ?? 0) / PAGE_SIZE))
   const show = (next: Partial<PaymentFilters>) => setFilters({ page: 1, ...next })
@@ -29,9 +31,9 @@ export default function AdminPaymentsPage() {
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
       <h1 className="text-2xl font-bold sm:text-3xl">Payments</h1>
-
+      <AdminNav />
       {summary.data && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
           <Tile label="Need review" value={summary.data.needs_review} alert onClick={() => show({ status: "needs_review" })} />
           <Tile label="Need a refund" value={summary.data.needs_refund} alert onClick={() => show({ attention: true })} />
           <Tile label="Stuck pending (10+ min)" value={summary.data.stuck_pending} alert onClick={() => show({ attention: true })} />

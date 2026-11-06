@@ -17,6 +17,8 @@ from app.modules.registrations import models as _registration_models
 from app.modules.payments import models as _payment_models
 from app.modules.payments.providers.mpesa import MpesaError, MpesaProcessing, get_mpesa_client
 from app.modules.notifications import models as _notification_models  # noqa: F401
+from app.modules.refunds import models as _refund_models
+
 from app.core.config import settings
 from app.modules.audit import models as _audit_models
 @pytest.fixture

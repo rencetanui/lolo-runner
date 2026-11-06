@@ -30,8 +30,8 @@ export default function OrganizerEventsPage() {
                   <CardTitle>{e.name}</CardTitle>
                   <p className="text-sm text-muted-foreground">{formatDate(e.event_date)} · {e.location}</p>
                 </div>
-                <Badge variant={e.status === "published" ? "default" : "secondary"}>
-                  {e.status === "published" ? "Published" : "Draft"}
+                <Badge variant={e.status === "published" ? "default" : e.status === "cancelled" ? "destructive" : "secondary"}>
+                  {e.status === "published" ? "Published" : e.status === "cancelled" ? "Cancelled" : "Draft"}
                 </Badge>
               </CardHeader>
               <CardContent className="text-sm text-muted-foreground">

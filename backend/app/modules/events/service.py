@@ -18,6 +18,6 @@ def get_event(db: Session, event_id: uuid.UUID) -> Event | None:
     stmt = (
         select(Event)
         .options(selectinload(Event.distances))
-        .where(Event.id == event_id, Event.status == EventStatus.published)
+        .where(Event.id == event_id, Event.status.in_([EventStatus.published, EventStatus.cancelled]))
     )
     return db.scalars(stmt).first()

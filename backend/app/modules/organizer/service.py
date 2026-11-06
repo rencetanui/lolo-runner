@@ -2,11 +2,17 @@ import csv
 import io
 import re
 import uuid
+from datetime import datetime, timezone
+from decimal import Decimal
+
 from collections import defaultdict
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.modules.audit.service import log_action
+from app.modules.notifications.service import notify_admins_refunds_queued, notify_event_cancelled
+from app.modules.refunds.service import refund_for_event_cancellation
 from app.modules.auth.models import Role, User
 from app.modules.events.models import Distance, Event, EventStatus
 from app.modules.registrations.models import Registration, RegistrationStatus
@@ -26,6 +32,8 @@ from .schemas import (
     EventUpdate,
     ParticipantOut,
     ParticipantPage,
+    CancelPreviewOut,
+    CancelEventIn
 )
 
 MAX_DISTANCES = 10
@@ -43,11 +51,12 @@ def _get_manageable(db: Session, user: User, event_id: uuid.UUID, *, lock: bool 
     """The event, if this user may manage it. Others get a 404 so event IDs don't leak."""
     stmt = select(Event).where(Event.id == event_id)
     if lock:
-        # Same row lock registration takes: edits and sign-ups are processed one at a time.
         stmt = stmt.with_for_update()
     event = db.scalars(stmt).first()
     if not event or (user.role != Role.admin and event.created_by != user.id):
         raise OrganizerError("event_not_found", "Event not found", 404)
+    if lock and event.status == EventStatus.cancelled:
+        raise OrganizerError("event_cancelled", "This event has been cancelled and can't be changed.", 409)
     return event
 
 
@@ -66,7 +75,10 @@ def _check_dates(opens, closes, event_date) -> None:
             422,
         )
 
-
+def _check_refund_date(refunds_until, event_date) -> None:
+    if refunds_until is not None and refunds_until > event_date:
+        raise OrganizerError("invalid_refund_date", "Refunds must end on or before the event date.", 422)
+    
 def _check_not_past(event_date) -> None:
     if event_date < today_ke():
         raise OrganizerError("event_in_past", "The event date can't be in the past.", 422)
@@ -105,7 +117,9 @@ def to_admin_out(db: Session, event: Event) -> EventAdminOut:
     return EventAdminOut(
         id=event.id, name=event.name, event_date=event.event_date, location=event.location,
         registration_opens=event.registration_opens, registration_closes=event.registration_closes,
-        status=event.status, distances=distances,
+        refunds_until=event.refunds_until, status=event.status,
+        cancelled_at=event.cancelled_at, cancellation_reason=event.cancellation_reason,
+        distances=distances,
         confirmed=sum(d.confirmed for d in distances), held=sum(d.held for d in distances),
     )
 
@@ -161,12 +175,14 @@ def get_event(db: Session, user: User, event_id: uuid.UUID) -> EventAdminOut:
 def create_event(db: Session, user: User, data: EventIn) -> EventAdminOut:
     _check_dates(data.registration_opens, data.registration_closes, data.event_date)
     _check_not_past(data.event_date)
+    _check_refund_date(data.refunds_until, data.event_date)
     event = Event(
         name=data.name,
         event_date=data.event_date,
         location=data.location,
         registration_opens=data.registration_opens,
         registration_closes=data.registration_closes,
+        refunds_until=data.refunds_until,
         status=EventStatus.draft,
         created_by=user.id,
         distances=[Distance(**d.model_dump()) for d in data.distances],
@@ -177,11 +193,14 @@ def create_event(db: Session, user: User, data: EventIn) -> EventAdminOut:
 
 def update_event(db: Session, user: User, event_id: uuid.UUID, data: EventUpdate) -> EventAdminOut:
     event = _get_manageable(db, user, event_id, lock=True)
-    changes = {k: v for k, v in data.model_dump(exclude_unset=True).items() if v is not None}
+    given = data.model_dump(exclude_unset=True)
+    changes = {k: v for k, v in given.items() if v is not None and k != "refunds_until"}
     merged = {k: changes.get(k, getattr(event, k)) for k in ("event_date", "registration_opens", "registration_closes")}
     _check_dates(merged["registration_opens"], merged["registration_closes"], merged["event_date"])
     if "event_date" in changes:
         _check_not_past(changes["event_date"])
+    refunds_until = given["refunds_until"] if "refunds_until" in given else event.refunds_until
+    _check_refund_date(refunds_until, merged["event_date"])
 
     # Only a new date or location is worth an email and an SMS. A renamed event is not.
     notable = {
@@ -191,6 +210,7 @@ def update_event(db: Session, user: User, event_id: uuid.UUID, data: EventUpdate
     }
     for key, value in changes.items():
         setattr(event, key, value)
+    event.refunds_until = refunds_until
     if notable and event.status == EventStatus.published:
         expire_stale(db, event_id=event.id)      # don't message people whose unpaid hold has lapsed
         notify_event_changed(db, event, notable)
@@ -234,6 +254,57 @@ def delete_event(db: Session, user: User, event_id: uuid.UUID) -> None:
         raise OrganizerError("event_has_registrations", "Events that have had registrations can't be deleted.")
     db.delete(event)
     db.commit()
+    
+def cancel_preview(db: Session, user: User, event_id: uuid.UUID) -> CancelPreviewOut:
+    event = _get_manageable(db, user, event_id)
+    expire_stale(db, event_id=event.id)
+    db.commit()
+    regs = list(
+        db.scalars(select(Registration).where(Registration.event_id == event.id, Registration.status != RegistrationStatus.cancelled))
+    )
+    paid = [r for r in regs if r.status == RegistrationStatus.confirmed and r.fee_amount > 0]
+    return CancelPreviewOut(
+        registrations=len(regs),
+        paid_registrations=len(paid),
+        refund_total=sum((r.fee_amount for r in paid), Decimal(0)),
+    )
+
+
+def cancel_event(db: Session, user: User, event_id: uuid.UUID, reason: str) -> EventAdminOut:
+    """Cancel the event, every registration, and queue a full refund for each one that paid."""
+    event = _get_manageable(db, user, event_id, lock=True)
+    if event.status != EventStatus.published:
+        raise OrganizerError("not_published", "Only published events can be cancelled. Delete a draft instead.", 409)
+    if event.event_date < today_ke():
+        raise OrganizerError("event_in_past", "This event has already taken place.", 422)
+
+    expire_stale(db, event_id=event.id)
+    now = datetime.now(timezone.utc)
+    regs = list(
+        db.scalars(select(Registration).where(Registration.event_id == event.id, Registration.status != RegistrationStatus.cancelled))
+    )
+    event.status = EventStatus.cancelled
+    event.cancelled_at = now
+    event.cancellation_reason = reason.strip()
+
+    refunds = []
+    for reg in regs:
+        was_paid = reg.status == RegistrationStatus.confirmed and reg.fee_amount > 0
+        reg.status = RegistrationStatus.cancelled
+        reg.cancelled_at = now
+        refund = refund_for_event_cancellation(db, reg, was_paid=was_paid, actor=user)
+        if refund:
+            refunds.append(refund)
+
+    refunds_by_reg = {r.registration_id: r for r in refunds}
+    log_action(
+        db, user, "event.cancelled", "event", event.id,
+        reason=event.cancellation_reason, registrations=len(regs), refunds=len(refunds),
+    )
+    notify_event_cancelled(db, event, regs, refunds_by_reg)
+    if refunds:
+        notify_admins_refunds_queued(db, event, len(refunds), sum((r.amount for r in refunds), Decimal(0)))
+    return _finish(db, event)
 
 
 # ------------------------------------------------------------ distances

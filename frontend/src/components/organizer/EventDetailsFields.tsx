@@ -8,10 +8,11 @@ export type EventDetails = {
   location: string
   registration_opens: string
   registration_closes: string
+  refunds_until: string
 }
 
 export const emptyDetails = (): EventDetails => ({
-  name: "", event_date: "", location: "", registration_opens: "", registration_closes: "",
+  name: "", event_date: "", location: "", registration_opens: "", registration_closes: "", refunds_until: "",
 })
 
 export const toDetails = (e: OrganizerEvent): EventDetails => ({
@@ -20,6 +21,7 @@ export const toDetails = (e: OrganizerEvent): EventDetails => ({
   location: e.location,
   registration_opens: e.registration_opens,
   registration_closes: e.registration_closes,
+  refunds_until: e.refunds_until ?? "",
 })
 
 export function detailsError(d: EventDetails): string | null {
@@ -29,6 +31,7 @@ export function detailsError(d: EventDetails): string | null {
     return "Fill in the event date and both registration dates."
   if (d.registration_opens > d.registration_closes) return "Registration can't close before it opens."
   if (d.registration_closes > d.event_date) return "Registration must close on or before the event date."
+  if (d.refunds_until && d.refunds_until > d.event_date) return "Refunds must end on or before the event date."
   return null
 }
 
@@ -57,6 +60,14 @@ export function EventDetailsFields({ value, onChange }: { value: EventDetails; o
       <div className="space-y-2">
         <Label htmlFor="ev-closes">Registration closes</Label>
         <Input id="ev-closes" type="date" value={value.registration_closes} onChange={set("registration_closes")} />
+      </div>
+        <div className="space-y-2 sm:col-span-2">
+        <Label htmlFor="ev-refunds">Refunds available until (optional)</Label>
+        <Input id="ev-refunds" type="date" value={value.refunds_until} onChange={set("refunds_until")} />
+        <p className="text-xs text-muted-foreground">
+          Runners who cancel on or before this date get a full refund. Leave it empty for non-refundable entries.
+          If you cancel the event itself, everyone who paid is refunded regardless.
+        </p>
       </div>
     </div>
   )

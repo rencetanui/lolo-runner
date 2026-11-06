@@ -27,7 +27,7 @@ export default function EventDetailPage() {
       </main>
     )
 
-  const isOpen = registrationState(event.registration_opens, event.registration_closes) === "open"
+  const isOpen = event.status === "published" && registrationState(event.registration_opens, event.registration_closes) === "open"
   const spotsLeft = (distanceId: string) =>
     availability?.find((a) => a.distance_id === distanceId)?.spots_left
 
@@ -42,6 +42,20 @@ export default function EventDetailPage() {
         </p>
         <RegistrationBadge opens={event.registration_opens} closes={event.registration_closes} />
       </header>
+
+      {event.status === "cancelled" && (
+        <Alert variant="destructive">
+          <AlertTitle>This event has been cancelled</AlertTitle>
+          <AlertDescription>{event.cancellation_reason}</AlertDescription>
+        </Alert>
+      )}
+      {event.status === "published" && (
+        <p className="text-sm text-muted-foreground">
+          {event.refunds_until
+            ? `Refunds are available until ${formatDate(event.refunds_until)}.`
+            : "Entries are non-refundable."}
+        </p>
+      )}
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Distances</h2>

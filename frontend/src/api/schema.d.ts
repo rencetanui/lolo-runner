@@ -504,6 +504,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/organizer/events/{event_id}/cancel-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cancel Preview */
+        get: operations["cancel_preview_api_v1_organizer_events__event_id__cancel_preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizer/events/{event_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel Event */
+        post: operations["cancel_event_api_v1_organizer_events__event_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/summary": {
         parameters: {
             query?: never;
@@ -606,6 +640,125 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/payments/{payment_id}/refund": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Refund */
+        post: operations["create_refund_api_v1_admin_payments__payment_id__refund_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/refunds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Refunds */
+        get: operations["list_refunds_api_v1_admin_refunds_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/refunds/{refund_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Refund */
+        get: operations["get_refund_api_v1_admin_refunds__refund_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/refunds/{refund_id}/paid": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark Refund Paid */
+        post: operations["mark_refund_paid_api_v1_admin_refunds__refund_id__paid_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/refunds/{refund_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject Refund */
+        post: operations["reject_refund_api_v1_admin_refunds__refund_id__reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/registrations/{registration_id}/cancellation-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cancellation Preview */
+        get: operations["cancellation_preview_api_v1_registrations__registration_id__cancellation_preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/registrations/{registration_id}/refund": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My Refund */
+        get: operations["my_refund_api_v1_registrations__registration_id__refund_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -674,6 +827,8 @@ export interface components {
             } | null;
             /** Audit */
             audit: components["schemas"]["AuditOut"][];
+            /** Refunds */
+            refunds: components["schemas"]["RefundBrief"][];
         };
         /** AdminPaymentOut */
         AdminPaymentOut: {
@@ -724,6 +879,105 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** AdminRefundDetail */
+        AdminRefundDetail: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Decided At */
+            decided_at: string | null;
+            status: components["schemas"]["RefundStatus"];
+            reason: components["schemas"]["RefundReason"];
+            /** Amount */
+            amount: string;
+            /** Phone */
+            phone: string;
+            /** Mpesa Reference */
+            mpesa_reference: string | null;
+            /** Admin Note */
+            admin_note: string | null;
+            user: components["schemas"]["PersonOut"];
+            event: components["schemas"]["EventRef"];
+            /** Distance Name */
+            distance_name: string;
+            /** Bib Number */
+            bib_number: number;
+            /**
+             * Registration Id
+             * Format: uuid
+             */
+            registration_id: string;
+            /**
+             * Payment Id
+             * Format: uuid
+             */
+            payment_id: string;
+            /** Payment Receipt */
+            payment_receipt: string | null;
+            /** Decided By Name */
+            decided_by_name: string | null;
+            /** Audit */
+            audit: components["schemas"]["AuditOut"][];
+        };
+        /** AdminRefundOut */
+        AdminRefundOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Decided At */
+            decided_at: string | null;
+            status: components["schemas"]["RefundStatus"];
+            reason: components["schemas"]["RefundReason"];
+            /** Amount */
+            amount: string;
+            /** Phone */
+            phone: string;
+            /** Mpesa Reference */
+            mpesa_reference: string | null;
+            /** Admin Note */
+            admin_note: string | null;
+            user: components["schemas"]["PersonOut"];
+            event: components["schemas"]["EventRef"];
+            /** Distance Name */
+            distance_name: string;
+            /** Bib Number */
+            bib_number: number;
+            /**
+             * Registration Id
+             * Format: uuid
+             */
+            registration_id: string;
+            /**
+             * Payment Id
+             * Format: uuid
+             */
+            payment_id: string;
+            /** Payment Receipt */
+            payment_receipt: string | null;
+            /** Decided By Name */
+            decided_by_name: string | null;
+        };
+        /** AdminRefundPage */
+        AdminRefundPage: {
+            /** Items */
+            items: components["schemas"]["AdminRefundOut"][];
+            /** Total */
+            total: number;
+        };
         /** AdminSummary */
         AdminSummary: {
             /** Needs Review */
@@ -734,6 +988,8 @@ export interface components {
             stuck_pending: number;
             /** Failed 24H */
             failed_24h: number;
+            /** Refunds Requested */
+            refunds_requested: number;
         };
         /** AuditOut */
         AuditOut: {
@@ -763,12 +1019,45 @@ export interface components {
             /** Spots Left */
             spots_left: number;
         };
+        /** CancelEventIn */
+        CancelEventIn: {
+            /**
+             * Reason
+             * @description Shown to everyone who registered.
+             */
+            reason: string;
+        };
+        /** CancelPreviewOut */
+        CancelPreviewOut: {
+            /** Registrations */
+            registrations: number;
+            /** Paid Registrations */
+            paid_registrations: number;
+            /** Refund Total */
+            refund_total: string;
+        };
+        /** CancellationPreviewOut */
+        CancellationPreviewOut: {
+            /** Paid */
+            paid: boolean;
+            /** Refundable */
+            refundable: boolean;
+            /** Amount */
+            amount: string | null;
+            /** Refunds Until */
+            refunds_until: string | null;
+        };
         /** ChangePasswordIn */
         ChangePasswordIn: {
             /** Current Password */
             current_password: string;
             /** New Password */
             new_password: string;
+        };
+        /** CreateRefundIn */
+        CreateRefundIn: {
+            /** Note */
+            note: string;
         };
         /** DistanceAdminOut */
         DistanceAdminOut: {
@@ -882,7 +1171,13 @@ export interface components {
              * Format: date
              */
             registration_closes: string;
+            /** Refunds Until */
+            refunds_until: string | null;
             status: components["schemas"]["EventStatus"];
+            /** Cancelled At */
+            cancelled_at: string | null;
+            /** Cancellation Reason */
+            cancellation_reason: string | null;
             /** Confirmed */
             confirmed: number;
             /** Held */
@@ -928,6 +1223,8 @@ export interface components {
              * Format: date
              */
             registration_closes: string;
+            /** Refunds Until */
+            refunds_until?: string | null;
             /** Distances */
             distances?: components["schemas"]["DistanceIn"][];
         };
@@ -959,6 +1256,11 @@ export interface components {
             registration_closes: string;
             /** Distances */
             distances: components["schemas"]["DistanceOut"][];
+            status: components["schemas"]["EventStatus"];
+            /** Refunds Until */
+            refunds_until: string | null;
+            /** Cancellation Reason */
+            cancellation_reason: string | null;
         };
         /** EventRef */
         EventRef: {
@@ -979,7 +1281,7 @@ export interface components {
          * EventStatus
          * @enum {string}
          */
-        EventStatus: "draft" | "published";
+        EventStatus: "draft" | "published" | "cancelled";
         /** EventSummaryOut */
         EventSummaryOut: {
             /**
@@ -1016,6 +1318,8 @@ export interface components {
             registration_opens?: string | null;
             /** Registration Closes */
             registration_closes?: string | null;
+            /** Refunds Until */
+            refunds_until?: string | null;
         };
         /** ForgotPasswordIn */
         ForgotPasswordIn: {
@@ -1056,6 +1360,13 @@ export interface components {
             email: string;
             /** Password */
             password: string;
+        };
+        /** MarkPaidIn */
+        MarkPaidIn: {
+            /** Mpesa Reference */
+            mpesa_reference: string;
+            /** Note */
+            note?: string | null;
         };
         /** MessageOut */
         MessageOut: {
@@ -1150,6 +1461,60 @@ export interface components {
             /** Email */
             email: string;
         };
+        /** RefundBrief */
+        RefundBrief: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            status: components["schemas"]["RefundStatus"];
+            reason: components["schemas"]["RefundReason"];
+            /** Amount */
+            amount: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Mpesa Reference */
+            mpesa_reference: string | null;
+        };
+        /** RefundOut */
+        RefundOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            status: components["schemas"]["RefundStatus"];
+            reason: components["schemas"]["RefundReason"];
+            /** Amount */
+            amount: string;
+            /** Phone */
+            phone: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Decided At */
+            decided_at: string | null;
+            /** Mpesa Reference */
+            mpesa_reference: string | null;
+            /** Message */
+            message: string | null;
+        };
+        /**
+         * RefundReason
+         * @enum {string}
+         */
+        RefundReason: "runner_cancelled" | "event_cancelled" | "late_payment" | "admin";
+        /**
+         * RefundStatus
+         * @enum {string}
+         */
+        RefundStatus: "requested" | "paid" | "rejected";
         /** RegistrationIn */
         RegistrationIn: {
             /**
@@ -1196,6 +1561,14 @@ export interface components {
          * @enum {string}
          */
         RegistrationStatus: "pending_payment" | "confirmed" | "cancelled";
+        /** RejectRefundIn */
+        RejectRefundIn: {
+            /**
+             * Note
+             * @description Shown to the runner.
+             */
+            note: string;
+        };
         /** ResetPasswordIn */
         ResetPasswordIn: {
             /** Token */
@@ -2522,6 +2895,76 @@ export interface operations {
             };
         };
     };
+    cancel_preview_api_v1_organizer_events__event_id__cancel_preview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CancelPreviewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_event_api_v1_organizer_events__event_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelEventIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventAdminOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     summary_api_v1_admin_summary_get: {
         parameters: {
             query?: never;
@@ -2714,6 +3157,252 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminPaymentDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_refund_api_v1_admin_payments__payment_id__refund_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                payment_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRefundIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminRefundDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_refunds_api_v1_admin_refunds_get: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["RefundStatus"] | null;
+                q?: string | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminRefundPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_refund_api_v1_admin_refunds__refund_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                refund_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminRefundDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_refund_paid_api_v1_admin_refunds__refund_id__paid_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                refund_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarkPaidIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminRefundDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject_refund_api_v1_admin_refunds__refund_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                refund_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectRefundIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminRefundDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancellation_preview_api_v1_registrations__registration_id__cancellation_preview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                registration_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CancellationPreviewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_refund_api_v1_registrations__registration_id__refund_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                registration_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefundOut"] | null;
                 };
             };
             /** @description Validation Error */

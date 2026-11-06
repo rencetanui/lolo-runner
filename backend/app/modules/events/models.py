@@ -12,6 +12,7 @@ from app.db.base import Base
 class EventStatus(str, enum.Enum):
     draft = "draft"
     published = "published"
+    cancelled = "cancelled"
 
 
 class Event(Base):
@@ -23,6 +24,9 @@ class Event(Base):
     location: Mapped[str] = mapped_column(String(150))
     registration_opens: Mapped[date]
     registration_closes: Mapped[date]
+    refunds_until: Mapped[date | None]
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    cancellation_reason: Mapped[str | None] = mapped_column(String(500))
     # Existing and seeded events stay public; the organizer API always creates drafts explicitly.
     # native_enum=False stores plain text, so no Postgres enum type has to be created in the migration.
     status: Mapped[EventStatus] = mapped_column(

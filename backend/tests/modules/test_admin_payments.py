@@ -108,7 +108,7 @@ def test_only_admins_can_use_the_admin_api(client, db, admin):
 
 def test_summary_counts_what_needs_attention(scenario, admin):
     assert admin.get(f"{A}/summary").json() == {
-        "needs_review": 1, "needs_refund": 0, "stuck_pending": 1, "failed_24h": 1,
+        "needs_review": 1, "needs_refund": 0, "stuck_pending": 1, "failed_24h": 1, "refunds_requested": 0,
     }
 
 
