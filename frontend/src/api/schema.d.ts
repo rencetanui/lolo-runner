@@ -504,6 +504,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Summary */
+        get: operations["summary_api_v1_admin_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Payments */
+        get: operations["list_payments_api_v1_admin_payments_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/payments.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Payments Csv */
+        get: operations["payments_csv_api_v1_admin_payments_csv_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/payments/{payment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Payment */
+        get: operations["get_payment_api_v1_admin_payments__payment_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/payments/{payment_id}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resolve Payment */
+        post: operations["resolve_payment_api_v1_admin_payments__payment_id__resolve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/payments/{payment_id}/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Recheck Payment */
+        post: operations["recheck_payment_api_v1_admin_payments__payment_id__check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -525,6 +627,130 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AdminPaymentDetail */
+        AdminPaymentDetail: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Completed At */
+            completed_at: string | null;
+            status: components["schemas"]["PaymentStatus"];
+            /** Amount */
+            amount: string;
+            /** Phone */
+            phone: string;
+            /** Mpesa Receipt */
+            mpesa_receipt: string | null;
+            /** Result Code */
+            result_code: number | null;
+            /** Result Desc */
+            result_desc: string | null;
+            /** Needs Refund */
+            needs_refund: boolean;
+            /** Admin Note */
+            admin_note: string | null;
+            user: components["schemas"]["PersonOut"];
+            event: components["schemas"]["EventRef"];
+            /** Distance Name */
+            distance_name: string;
+            /** Bib Number */
+            bib_number: number;
+            /**
+             * Registration Id
+             * Format: uuid
+             */
+            registration_id: string;
+            registration_status: components["schemas"]["RegistrationStatus"];
+            /** Raw Callback */
+            raw_callback: {
+                [key: string]: unknown;
+            } | null;
+            /** Audit */
+            audit: components["schemas"]["AuditOut"][];
+        };
+        /** AdminPaymentOut */
+        AdminPaymentOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Completed At */
+            completed_at: string | null;
+            status: components["schemas"]["PaymentStatus"];
+            /** Amount */
+            amount: string;
+            /** Phone */
+            phone: string;
+            /** Mpesa Receipt */
+            mpesa_receipt: string | null;
+            /** Result Code */
+            result_code: number | null;
+            /** Result Desc */
+            result_desc: string | null;
+            /** Needs Refund */
+            needs_refund: boolean;
+            /** Admin Note */
+            admin_note: string | null;
+            user: components["schemas"]["PersonOut"];
+            event: components["schemas"]["EventRef"];
+            /** Distance Name */
+            distance_name: string;
+            /** Bib Number */
+            bib_number: number;
+            /**
+             * Registration Id
+             * Format: uuid
+             */
+            registration_id: string;
+            registration_status: components["schemas"]["RegistrationStatus"];
+        };
+        /** AdminPaymentPage */
+        AdminPaymentPage: {
+            /** Items */
+            items: components["schemas"]["AdminPaymentOut"][];
+            /** Total */
+            total: number;
+        };
+        /** AdminSummary */
+        AdminSummary: {
+            /** Needs Review */
+            needs_review: number;
+            /** Needs Refund */
+            needs_refund: number;
+            /** Stuck Pending */
+            stuck_pending: number;
+            /** Failed 24H */
+            failed_24h: number;
+        };
+        /** AuditOut */
+        AuditOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Action */
+            action: string;
+            /** Actor Name */
+            actor_name: string | null;
+            /** Detail */
+            detail: {
+                [key: string]: unknown;
+            } | null;
+        };
         /** AvailabilityOut */
         AvailabilityOut: {
             /**
@@ -734,6 +960,21 @@ export interface components {
             /** Distances */
             distances: components["schemas"]["DistanceOut"][];
         };
+        /** EventRef */
+        EventRef: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Event Date
+             * Format: date
+             */
+            event_date: string;
+        };
         /**
          * EventStatus
          * @enum {string}
@@ -897,6 +1138,18 @@ export interface components {
          * @enum {string}
          */
         PaymentStatus: "pending" | "succeeded" | "failed" | "needs_review";
+        /** PersonOut */
+        PersonOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Full Name */
+            full_name: string;
+            /** Email */
+            email: string;
+        };
         /** RegistrationIn */
         RegistrationIn: {
             /**
@@ -949,6 +1202,21 @@ export interface components {
             token: string;
             /** New Password */
             new_password: string;
+        };
+        /** ResolveIn */
+        ResolveIn: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "confirm" | "dismiss";
+            /**
+             * Note
+             * @description Why. Kept in the audit log.
+             */
+            note: string;
+            /** Mpesa Receipt */
+            mpesa_receipt?: string | null;
         };
         /**
          * Role
@@ -2241,6 +2509,211 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    summary_api_v1_admin_summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_payments_api_v1_admin_payments_get: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["PaymentStatus"] | null;
+                attention?: boolean;
+                q?: string | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminPaymentPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    payments_csv_api_v1_admin_payments_csv_get: {
+        parameters: {
+            query: {
+                start: string;
+                end: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_payment_api_v1_admin_payments__payment_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                payment_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminPaymentDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolve_payment_api_v1_admin_payments__payment_id__resolve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                payment_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminPaymentDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recheck_payment_api_v1_admin_payments__payment_id__check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                payment_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminPaymentDetail"];
                 };
             };
             /** @description Validation Error */

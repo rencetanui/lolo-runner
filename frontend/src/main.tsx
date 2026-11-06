@@ -23,6 +23,7 @@ import ChangePasswordPage from "./pages/ChangePasswordPage"
 import ForgotPasswordPage from "./pages/ForgotPasswordPage"
 import ResetPasswordPage from "./pages/ResetPasswordPage"
 import VerifyEmailPage from "./pages/VerifyEmailPage"
+import { Navigate } from "react-router-dom"
 
 const queryClient = new QueryClient()
 
@@ -50,6 +51,11 @@ createRoot(document.getElementById("root")!).render(
                   <Route path="/organizer/events" element={<OrganizerEventsPage />} />
                   <Route path="/organizer/events/new" element={<OrganizerNewEventPage />} />
                   <Route path="/organizer/events/:id" element={<OrganizerEventPage />} />
+                </Route>
+                <Route element={<RoleRoute roles={["admin"]} />}>
+                  <Route path="/admin" element={<Navigate to="/admin/payments" replace />} />
+                  <Route path="/admin/payments" element={<AdminPaymentsPage />} />
+                  <Route path="/admin/payments/:id" element={<AdminPaymentPage />} />
                 </Route>
               </Route>
             </Route>

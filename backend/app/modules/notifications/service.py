@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.modules.auth.models import User
+from app.modules.auth.models import Role, User
 from app.modules.events.models import Event, EventStatus
 from app.modules.registrations.models import Registration, RegistrationStatus
 from app.modules.runners.models import RunnerProfile
@@ -180,6 +180,24 @@ def notify_google_linked(db: Session, user: User) -> None:
         _enqueue_many(db, _items(user, None, rendered, f"google_linked:{uuid.uuid4().hex}"))
     except Exception:
         log.exception("Could not queue the Google-linked notice for user %s", user.id)
+        
+def notify_admins_payment_problem(db: Session, payment, kind: str, reason: str) -> None:
+    """Email every active admin. Never raises: an alert problem mustn't undo the payment handling."""
+    try:
+        admins = list(db.scalars(select(User).where(User.role == Role.admin, User.is_active.is_(True))))
+        if not admins:
+            log.warning("Payment %s needs attention (%s) but there is no admin to tell", payment.id, kind)
+            return
+        rendered = templates.payment_alert(
+            kind=kind, amount=payment.amount, receipt=payment.mpesa_receipt,
+            reason=reason, url=_url(f"/admin/payments/{payment.id}"),
+        )
+        items: list[dict] = []
+        for admin in admins:
+            items += _items(admin, None, rendered, f"payment_alert:{payment.id}:{kind}:{admin.id}")
+        _enqueue_many(db, items)
+    except Exception:
+        log.exception("Could not queue the payment alert for payment %s", payment.id)
         
 def enqueue_event_reminders(db: Session, now: datetime | None = None) -> int:
     """Worker job: queue "it's tomorrow" reminders. Commits.

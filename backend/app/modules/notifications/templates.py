@@ -181,3 +181,18 @@ def google_linked(*, name: str, url: str) -> Rendered:
         text="\n".join([intro, "", note, "", f"Reset your password: {url}"]),
         html=_page("Google sign-in added", [intro, note], ("Reset your password", url)),
     )
+    
+def payment_alert(*, kind: str, amount: Decimal, receipt: str | None, reason: str, url: str) -> Rendered:
+    title = {
+        "needs_review": "A payment needs review",
+        "needs_refund": "A payment needs a refund",
+    }.get(kind, "A payment needs attention")
+    lines = [f"Amount: KES {int(amount):,}"]
+    if receipt:
+        lines.append(f"M-Pesa reference: {receipt}")
+    lines.append(f"Reason: {reason}")
+    return Rendered(
+        subject=f"{title}: KES {int(amount):,}",
+        text="\n".join([title, "", *lines, "", f"Open it: {url}"]),
+        html=_page(title, lines, ("Open in admin", url)),
+    )

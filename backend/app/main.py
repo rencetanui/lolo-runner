@@ -15,7 +15,7 @@ from app.modules.registrations.router import router as registrations_router
 from app.modules.registrations.service import RegistrationError
 from app.modules.payments.router import router as payments_router
 from app.modules.payments.service import PaymentError
-
+from app.modules.admin.router import router as admin_router
 
 app = FastAPI(title="Lolo Runner API")
 
@@ -31,6 +31,7 @@ app.include_router(runners_router, prefix="/api/v1")
 app.include_router(registrations_router, prefix="/api/v1")
 app.include_router(payments_router, prefix="/api/v1")
 app.include_router(organizer_router, prefix="/api/v1")
+app.include_router(admin_router, prefix="/api/v1")
 
 @app.exception_handler(RateLimitError)
 async def rate_limit_handler(request: Request, exc: RateLimitError):

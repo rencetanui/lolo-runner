@@ -2,10 +2,14 @@ import { Link, Outlet } from "react-router-dom"
 import { useLogout, useMe } from "@/api/auth"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { VerifyEmailBanner } from "@/pages/VerifyEmailBanner"
+import { useAdminSummary } from "@/api/admin"
+
 
 export default function Layout() {
   const { data: user } = useMe()
   const logout = useLogout()
+  const { data: attention } = useAdminSummary(user?.role === "admin")
+  const alerts = attention ? attention.needs_review + attention.needs_refund + attention.stuck_pending : 0
 
   return (
     <>
@@ -24,6 +28,14 @@ export default function Layout() {
                   </Link>
                   <span className="text-sm text-muted-foreground">·</span>
                 </>
+              )}
+              {user.role === "admin" && (
+                <Link to="/admin/payments" className="text-sm hover:underline">
+                  Admin
+                  {alerts > 0 && (
+                    <span className="ml-1 rounded-full bg-destructive px-1.5 py-0.5 text-xs text-white">{alerts}</span>
+                  )}
+                </Link>
               )}
               <Link to="/account" className="text-sm hover:underline">{user.full_name}</Link>
               <Button variant="outline" size="sm" onClick={() => logout.mutate()}>

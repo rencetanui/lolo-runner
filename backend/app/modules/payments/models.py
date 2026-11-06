@@ -49,5 +49,7 @@ class Payment(Base):
     result_desc: Mapped[str | None] = mapped_column(String(255))
     needs_refund: Mapped[bool] = mapped_column(default=False)
     raw_callback: Mapped[dict | None] = mapped_column(JSON)
+    admin_note: Mapped[str | None] = mapped_column(String(500))
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

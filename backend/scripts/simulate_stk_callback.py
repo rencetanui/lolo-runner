@@ -17,6 +17,7 @@ from app.modules.registrations import models as _reg  # noqa: F401
 parser = argparse.ArgumentParser()
 parser.add_argument("--code", type=int, default=0, help="0 = paid, 1032 = cancelled, 1 = insufficient funds")
 parser.add_argument("--base-url", default="http://127.0.0.1:8000")
+parser.add_argument("--amount", type=float, default=None, help="pretend a different amount was paid")
 args = parser.parse_args()
 
 with SessionLocal() as db:
@@ -37,7 +38,7 @@ stk = {
 }
 if args.code == 0:
     stk["CallbackMetadata"] = {"Item": [
-        {"Name": "Amount", "Value": float(amount)},
+        {"Name": "Amount", "Value": args.amount if args.amount is not None else float(amount)},
         {"Name": "MpesaReceiptNumber", "Value": "SIM" + checkout_id[-7:].upper()},
         {"Name": "TransactionDate", "Value": 20261102120000},
         {"Name": "PhoneNumber", "Value": int(phone.lstrip("+"))},

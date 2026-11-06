@@ -1,11 +1,12 @@
 import hmac
 import uuid
 
-from fastapi import APIRouter, Body, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.dependencies import get_current_user
+from app.core.rate_limit import client_ip
 from app.db.session import get_db
 from app.modules.auth.models import User
 
@@ -24,11 +25,12 @@ router = APIRouter(tags=["Payments"])
 def start_payment(
     registration_id: uuid.UUID,
     data: PaymentIn,
+    request: Request,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
     mpesa=Depends(get_mpesa_client),
 ):
-    return service.start_payment(db, user, registration_id, data, mpesa)
+    return service.start_payment(db, user, registration_id, data, mpesa, ip=client_ip(request))
 
 
 @router.get("/registrations/{registration_id}/payments", response_model=list[PaymentOut])
@@ -51,9 +53,18 @@ def check_payment(
 
 
 @router.post("/payments/callbacks/stk/{secret}", include_in_schema=False)
-def stk_callback(secret: str, payload: dict = Body(...), db: Session = Depends(get_db)):
+def stk_callback(
+    secret: str,
+    request: Request,
+    payload: dict = Body(...),
+    db: Session = Depends(get_db),
+    mpesa=Depends(get_mpesa_client),
+):
     expected = settings.mpesa_callback_secret
     if not expected or not hmac.compare_digest(secret.encode(), expected.encode()):
         raise HTTPException(status.HTTP_404_NOT_FOUND)
-    service.handle_stk_callback(db, payload)
+    allowed = [ip.strip() for ip in settings.mpesa_callback_ips.split(",") if ip.strip()]
+    if allowed and client_ip(request) not in allowed:
+        raise HTTPException(status.HTTP_403_FORBIDDEN)
+    service.handle_stk_callback(db, payload, mpesa)
     return {"ResultCode": 0, "ResultDesc": "Accepted"}
