@@ -1,10 +1,11 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Response, status
+from fastapi import APIRouter, Depends, Query, Response, status, File, UploadFile
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import require_role
+from app.core.config import settings
 from app.db.session import get_db
 from app.modules.auth.models import Role, User
 
@@ -53,6 +54,18 @@ def publish_event(event_id: uuid.UUID, user: OrganizerUser, db: DB):
 def unpublish_event(event_id: uuid.UUID, user: OrganizerUser, db: DB):
     return service.unpublish_event(db, user, event_id)
 
+@router.post("/{event_id}/banner", response_model=EventAdminOut)
+def upload_banner(event_id: uuid.UUID, user: OrganizerUser, db: DB, file: UploadFile = File(...)):
+    limit = settings.max_upload_mb * 1024 * 1024
+    data = file.file.read(limit + 1)
+    if len(data) > limit:
+        raise service.OrganizerError("image_too_large", f"The image must be under {settings.max_upload_mb} MB.", 413)
+    return service.set_banner(db, user, event_id, data)
+
+
+@router.delete("/{event_id}/banner", response_model=EventAdminOut)
+def delete_banner(event_id: uuid.UUID, user: OrganizerUser, db: DB):
+    return service.delete_banner(db, user, event_id)
 
 @router.post("/{event_id}/distances", response_model=EventAdminOut, status_code=status.HTTP_201_CREATED)
 def add_distance(event_id: uuid.UUID, data: DistanceIn, user: OrganizerUser, db: DB):

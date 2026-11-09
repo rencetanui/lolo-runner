@@ -29,3 +29,8 @@ export function ageOn(dob: string, on: string) {
 
 export const formatDateTime = (iso: string) =>
   new Intl.DateTimeFormat("en-KE", { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso))
+
+export function formatTime(t: string) {
+  const [h, m] = t.split(":").map(Number)
+  return new Intl.DateTimeFormat("en-KE", { hour: "numeric", minute: "2-digit" }).format(new Date(2000, 0, 1, h, m))
+}

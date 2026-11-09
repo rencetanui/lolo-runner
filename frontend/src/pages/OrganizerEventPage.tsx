@@ -5,7 +5,7 @@ import {
 } from "@/api/organizer"
 import { DistanceManager } from "@/components/organizer/DistanceManager"
 import {
-  EventDetailsFields, detailsError, toDetails, type EventDetails,
+  detailsPayload, EventDetailsFields, detailsError, toDetails, type EventDetails,
 } from "@/components/organizer/EventDetailsFields"
 import { CancelEventSection } from "@/components/organizer/CancelEventSection"
 import { ParticipantsTable } from "@/components/organizer/ParticipantsTable"
@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { BannerCard } from "@/components/organizer/BannerCard"
 
 function EventEditor({ event }: { event: OrganizerEvent }) {
   const navigate = useNavigate()
@@ -48,10 +49,7 @@ function EventEditor({ event }: { event: OrganizerEvent }) {
     if (problem) return setLocalError(problem)
     setLocalError(null)
     setSaved(false)
-    update.mutate(
-      { ...details, name: details.name.trim(), location: details.location.trim() },
-      { onSuccess: () => setSaved(true) },
-    )
+    update.mutate(detailsPayload(details), { onSuccess: () => setSaved(true) })
   }
 
   function onDelete() {
@@ -104,6 +102,7 @@ function EventEditor({ event }: { event: OrganizerEvent }) {
         </Card>
       </form>
 
+      <BannerCard event={event} />
       <DistanceManager event={event} />
       <ParticipantsTable eventId={event.id} />
 

@@ -2,27 +2,33 @@ import csv
 import io
 import re
 import uuid
+from collections import defaultdict
 from datetime import datetime, timezone
 from decimal import Decimal
-
-from collections import defaultdict
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.core.storage import delete_media, save_media
 from app.modules.audit.service import log_action
-from app.modules.notifications.service import notify_admins_refunds_queued, notify_event_cancelled
-from app.modules.refunds.service import refund_for_event_cancellation
 from app.modules.auth.models import Role, User
 from app.modules.events.models import Distance, Event, EventStatus
+from app.modules.notifications.service import (
+    notify_admins_refunds_queued,
+    notify_event_cancelled,
+    notify_event_changed,
+    notify_start_time_changed,
+)
+from app.modules.refunds.service import refund_for_event_cancellation
 from app.modules.registrations.models import Registration, RegistrationStatus
 from app.modules.registrations.service import expire_stale, holding_spot
 from app.modules.runners.models import RunnerProfile
-from app.modules.notifications.service import notify_event_changed
 from app.utils.age import age_category, age_on
 from app.utils.dates import today_ke
+from app.utils.images import ImageError, process_banner
 
 from .schemas import (
+    CancelPreviewOut,
     DistanceAdminOut,
     DistanceIn,
     DistanceUpdate,
@@ -32,11 +38,11 @@ from .schemas import (
     EventUpdate,
     ParticipantOut,
     ParticipantPage,
-    CancelPreviewOut,
-    CancelEventIn
 )
 
 MAX_DISTANCES = 10
+# Optional fields an organizer may set back to empty (everything else ignores null).
+CLEARABLE = ("refunds_until", "description", "venue_details", "map_url", "contact_email", "contact_phone")
 
 
 class OrganizerError(Exception):
@@ -75,10 +81,12 @@ def _check_dates(opens, closes, event_date) -> None:
             422,
         )
 
+
 def _check_refund_date(refunds_until, event_date) -> None:
     if refunds_until is not None and refunds_until > event_date:
         raise OrganizerError("invalid_refund_date", "Refunds must end on or before the event date.", 422)
-    
+
+
 def _check_not_past(event_date) -> None:
     if event_date < today_ke():
         raise OrganizerError("event_in_past", "The event date can't be in the past.", 422)
@@ -87,6 +95,11 @@ def _check_not_past(event_date) -> None:
 def _check_name_free(event: Event, name: str, ignore_id: uuid.UUID | None = None) -> None:
     if any(d.name.lower() == name.lower() and d.id != ignore_id for d in event.distances):
         raise OrganizerError("duplicate_distance", f'This event already has a "{name}" distance.')
+
+
+def _remove_banner_files(key: str) -> None:
+    delete_media(f"events/{key}.jpg")
+    delete_media(f"events/{key}-og.jpg")
 
 
 def _taken(db: Session, event_id: uuid.UUID) -> dict:
@@ -110,6 +123,7 @@ def to_admin_out(db: Session, event: Event) -> EventAdminOut:
         distances.append(
             DistanceAdminOut(
                 id=d.id, name=d.name, km=d.km, fee=d.fee, capacity=d.capacity, min_age=d.min_age,
+                start_time=d.start_time, cutoff_minutes=d.cutoff_minutes,
                 confirmed=confirmed, held=held,
                 spots_left=max(d.capacity - confirmed - held, 0),
             )
@@ -119,6 +133,8 @@ def to_admin_out(db: Session, event: Event) -> EventAdminOut:
         registration_opens=event.registration_opens, registration_closes=event.registration_closes,
         refunds_until=event.refunds_until, status=event.status,
         cancelled_at=event.cancelled_at, cancellation_reason=event.cancellation_reason,
+        description=event.description, venue_details=event.venue_details, map_url=event.map_url,
+        contact_email=event.contact_email, contact_phone=event.contact_phone, banner_url=event.banner_url,
         distances=distances,
         confirmed=sum(d.confirmed for d in distances), held=sum(d.held for d in distances),
     )
@@ -183,6 +199,11 @@ def create_event(db: Session, user: User, data: EventIn) -> EventAdminOut:
         registration_opens=data.registration_opens,
         registration_closes=data.registration_closes,
         refunds_until=data.refunds_until,
+        description=data.description,
+        venue_details=data.venue_details,
+        map_url=data.map_url,
+        contact_email=data.contact_email,
+        contact_phone=data.contact_phone,
         status=EventStatus.draft,
         created_by=user.id,
         distances=[Distance(**d.model_dump()) for d in data.distances],
@@ -194,23 +215,24 @@ def create_event(db: Session, user: User, data: EventIn) -> EventAdminOut:
 def update_event(db: Session, user: User, event_id: uuid.UUID, data: EventUpdate) -> EventAdminOut:
     event = _get_manageable(db, user, event_id, lock=True)
     given = data.model_dump(exclude_unset=True)
-    changes = {k: v for k, v in given.items() if v is not None and k != "refunds_until"}
+    changes = {k: v for k, v in given.items() if k not in CLEARABLE and v is not None}
+    cleared = {k: given[k] for k in CLEARABLE if k in given}       # these may be set to empty
     merged = {k: changes.get(k, getattr(event, k)) for k in ("event_date", "registration_opens", "registration_closes")}
     _check_dates(merged["registration_opens"], merged["registration_closes"], merged["event_date"])
     if "event_date" in changes:
         _check_not_past(changes["event_date"])
-    refunds_until = given["refunds_until"] if "refunds_until" in given else event.refunds_until
+    refunds_until = cleared["refunds_until"] if "refunds_until" in cleared else event.refunds_until
     _check_refund_date(refunds_until, merged["event_date"])
 
     # Only a new date or location is worth an email and an SMS. A renamed event is not.
+    # This compares the values that will really be saved (`changes`), never a raw null from the request.
     notable = {
         key: (getattr(event, key), changes[key])
         for key in ("event_date", "location")
         if key in changes and changes[key] != getattr(event, key)
     }
-    for key, value in changes.items():
+    for key, value in {**changes, **cleared}.items():
         setattr(event, key, value)
-    event.refunds_until = refunds_until
     if notable and event.status == EventStatus.published:
         expire_stale(db, event_id=event.id)      # don't message people whose unpaid hold has lapsed
         notify_event_changed(db, event, notable)
@@ -252,9 +274,13 @@ def delete_event(db: Session, user: User, event_id: uuid.UUID) -> None:
     used = db.scalar(select(func.count()).select_from(Registration).where(Registration.event_id == event.id))
     if used:
         raise OrganizerError("event_has_registrations", "Events that have had registrations can't be deleted.")
+    banner = event.banner_file
     db.delete(event)
     db.commit()
-    
+    if banner:
+        _remove_banner_files(banner)
+
+
 def cancel_preview(db: Session, user: User, event_id: uuid.UUID) -> CancelPreviewOut:
     event = _get_manageable(db, user, event_id)
     expire_stale(db, event_id=event.id)
@@ -307,6 +333,37 @@ def cancel_event(db: Session, user: User, event_id: uuid.UUID, reason: str) -> E
     return _finish(db, event)
 
 
+def set_banner(db: Session, user: User, event_id: uuid.UUID, data: bytes) -> EventAdminOut:
+    event = _get_manageable(db, user, event_id, lock=True)
+    try:
+        banner, share = process_banner(data)
+    except ImageError as exc:
+        raise OrganizerError("invalid_image", str(exc), 422)
+    key = uuid.uuid4().hex
+    save_media(f"events/{key}.jpg", banner)
+    save_media(f"events/{key}-og.jpg", share)
+    old = event.banner_file
+    event.banner_file = key
+    try:
+        result = _finish(db, event)
+    except Exception:
+        _remove_banner_files(key)
+        raise
+    if old:
+        _remove_banner_files(old)
+    return result
+
+
+def delete_banner(db: Session, user: User, event_id: uuid.UUID) -> EventAdminOut:
+    event = _get_manageable(db, user, event_id, lock=True)
+    old = event.banner_file
+    event.banner_file = None
+    result = _finish(db, event)
+    if old:
+        _remove_banner_files(old)
+    return result
+
+
 # ------------------------------------------------------------ distances
 def add_distance(db: Session, user: User, event_id: uuid.UUID, data: DistanceIn) -> EventAdminOut:
     event = _get_manageable(db, user, event_id, lock=True)
@@ -322,7 +379,10 @@ def update_distance(
 ) -> EventAdminOut:
     event = _get_manageable(db, user, event_id, lock=True)
     distance = _find_distance(event, distance_id)
-    changes = {k: v for k, v in data.model_dump(exclude_unset=True).items() if v is not None}
+    given = data.model_dump(exclude_unset=True)
+    clearable = ("start_time", "cutoff_minutes")
+    changes = {k: v for k, v in given.items() if v is not None and k not in clearable}
+    cleared = {k: given[k] for k in clearable if k in given}
     if "name" in changes:
         _check_name_free(event, changes["name"], ignore_id=distance.id)
 
@@ -341,8 +401,14 @@ def update_distance(
                 "capacity_below_registrations",
                 f"{taken} runner(s) are already registered or holding a spot, so capacity can't go below {taken}.",
             )
-    for key, value in changes.items():
+    old_start = distance.start_time
+    for key, value in {**changes, **cleared}.items():
         setattr(distance, key, value)
+    if (
+        "start_time" in cleared and cleared["start_time"] != old_start
+        and event.status == EventStatus.published and taken
+    ):
+        notify_start_time_changed(db, event, distance, old_start, cleared["start_time"])
     return _finish(db, event)
 
 

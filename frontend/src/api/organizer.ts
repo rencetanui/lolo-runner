@@ -180,3 +180,33 @@ export function useCancelEvent(id: string) {
     onSuccess: after,
   })
 }
+export function useUploadBanner(id: string) {
+  const after = useAfterChange()
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const form = new FormData()
+      form.append("file", file)
+      const res = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/v1/organizer/events/${id}/banner`, {
+        method: "POST",
+        body: form,
+        credentials: "include",
+      })
+      const body = await res.json().catch(() => null)
+      if (!res.ok) throw toApiError(body, "Could not upload the image")
+      return body as OrganizerEvent
+    },
+    onSuccess: after,
+  })
+}
+
+export function useDeleteBanner(id: string) {
+  const after = useAfterChange()
+  return useMutation({
+    mutationFn: async () =>
+      unwrap(
+        await api.DELETE("/api/v1/organizer/events/{event_id}/banner", { params: { path: { event_id: id } } }),
+        "Could not remove the image",
+      ),
+    onSuccess: after,
+  })
+}

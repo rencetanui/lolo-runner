@@ -4,11 +4,12 @@ import { useCreateEvent } from "@/api/organizer"
 import { DistanceFields } from "@/components/organizer/DistanceFields"
 import { draftError, emptyDraft, toInput, type DistanceDraft } from "@/components/organizer/distanceDraft"
 import {
-  EventDetailsFields, detailsError, emptyDetails, type EventDetails,
+  detailsPayload, EventDetailsFields, detailsError, emptyDetails, type EventDetails,
 } from "@/components/organizer/EventDetailsFields"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
 
 export default function OrganizerNewEventPage() {
   const navigate = useNavigate()
@@ -26,12 +27,7 @@ export default function OrganizerNewEventPage() {
     if (problem) return setLocalError(problem)
     setLocalError(null)
     create.mutate(
-      {
-        ...details,
-        name: details.name.trim(),
-        location: details.location.trim(),
-        distances: distances.map(toInput),
-      },
+      { ...detailsPayload(details), distances: distances.map(toInput) },
       { onSuccess: (event) => navigate(`/organizer/events/${event.id}`) },
     )
   }

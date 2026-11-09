@@ -60,6 +60,12 @@ def make_event(db):
         return event
     return _make
 
+@pytest.fixture(autouse=True)
+def _no_swallowed_notification_errors(caplog):
+    yield
+    bad = [r for r in caplog.records if r.name.startswith("app.modules.notifications") and r.levelname == "ERROR"]
+    assert not bad, f"A notification error was swallowed: {bad[0].getMessage()}"
+
 class FakeMpesa:
     def __init__(self):
         self.pushes = []

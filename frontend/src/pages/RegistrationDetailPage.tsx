@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatDate, formatDateTime, formatKES } from "@/lib/format"
 import { PaymentPanel } from "@/components/PaymentPanel"
-import { RefundPanel, useCancellationPreview } from "@/api/refunds"
+import { useCancellationPreview } from "@/api/refunds"
+import { RefundPanel } from "@/components/RefundPanel"
 
 export default function RegistrationDetailPage() {
   const { id = "" } = useParams()

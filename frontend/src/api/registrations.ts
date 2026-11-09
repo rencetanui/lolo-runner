@@ -41,9 +41,10 @@ export function useWaiver() {
   })
 }
 
-export function useAvailability(eventId: string) {
+export function useAvailability(eventId: string, enabled = true) {
   return useQuery({
     queryKey: ["availability", eventId],
+    enabled,
     queryFn: async () => {
       const { data } = await api.GET("/api/v1/events/{event_id}/availability", {
         params: { path: { event_id: eventId } },

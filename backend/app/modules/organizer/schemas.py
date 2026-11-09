@@ -1,12 +1,13 @@
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, time
 from decimal import Decimal
+from urllib.parse import urlparse
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.modules.events.models import EventStatus
 from app.modules.registrations.models import RegistrationStatus
-
+from app.utils.phone import normalize_phone
 
 # ----------------------------------------------------------------- input
 class DistanceIn(BaseModel):
@@ -17,6 +18,8 @@ class DistanceIn(BaseModel):
     fee: int = Field(ge=0, le=1_000_000, description="Whole Kenya shillings. 0 means free.")
     capacity: int = Field(ge=1, le=100_000)
     min_age: int = Field(default=12, ge=0, le=100)
+    start_time: time | None = None
+    cutoff_minutes: int | None = Field(default=None, ge=15, le=1440)
 
 
 class DistanceUpdate(BaseModel):
@@ -27,9 +30,43 @@ class DistanceUpdate(BaseModel):
     fee: int | None = Field(default=None, ge=0, le=1_000_000)
     capacity: int | None = Field(default=None, ge=1, le=100_000)
     min_age: int | None = Field(default=None, ge=0, le=100)
+    start_time: time | None = None
+    cutoff_minutes: int | None = Field(default=None, ge=15, le=1440)
 
 
-class EventIn(BaseModel):
+class EventContent(BaseModel):
+    """The descriptive fields of an event. All optional, and blank means "none"."""
+    description: str | None = Field(default=None, max_length=5000)
+    venue_details: str | None = Field(default=None, max_length=1000)
+    map_url: str | None = Field(default=None, max_length=500)
+    contact_email: EmailStr | None = None
+    contact_phone: str | None = Field(default=None, max_length=20)
+
+    @field_validator("description", "venue_details", "map_url", "contact_email", "contact_phone", mode="before")
+    @classmethod
+    def blank_to_none(cls, v):
+        if isinstance(v, str):
+            v = v.strip()
+            return v or None
+        return v
+
+    @field_validator("map_url")
+    @classmethod
+    def map_url_is_https(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        parsed = urlparse(v)
+        if parsed.scheme != "https" or not parsed.netloc or " " in v:
+            raise ValueError("Enter a full link starting with https://")
+        return v
+
+    @field_validator("contact_phone")
+    @classmethod
+    def phone_is_valid(cls, v: str | None) -> str | None:
+        return normalize_phone(v) if v else None
+
+
+class EventIn(EventContent):
     model_config = ConfigDict(str_strip_whitespace=True)
 
     name: str = Field(min_length=3, max_length=150)
@@ -49,7 +86,7 @@ class EventIn(BaseModel):
         return v
 
 
-class EventUpdate(BaseModel):
+class EventUpdate(EventContent):
     model_config = ConfigDict(str_strip_whitespace=True)
 
     name: str | None = Field(default=None, min_length=3, max_length=150)
@@ -71,6 +108,8 @@ class DistanceAdminOut(BaseModel):
     confirmed: int
     held: int          # unpaid, but still holding a spot
     spots_left: int
+    start_time: time | None
+    cutoff_minutes: int | None
 
 
 class EventAdminOut(BaseModel):
@@ -87,7 +126,13 @@ class EventAdminOut(BaseModel):
     confirmed: int
     held: int
     distances: list[DistanceAdminOut]
-    
+    description: str | None
+    venue_details: str | None
+    map_url: str | None
+    contact_email: str | None
+    contact_phone: str | None
+    banner_url: str | None
+
 
 class EventSummaryOut(BaseModel):
     id: uuid.UUID
@@ -113,13 +158,13 @@ class ParticipantOut(BaseModel):
     club: str | None
     tshirt_size: str | None
     registered_at: datetime
-    # Deliberately NOT here: medical notes and emergency contact details.
 
 
 class ParticipantPage(BaseModel):
     items: list[ParticipantOut]
     total: int
-    
+
+
 class CancelEventIn(BaseModel):
     reason: str = Field(min_length=10, max_length=500, description="Shown to everyone who registered.")
 
@@ -128,4 +173,3 @@ class CancelPreviewOut(BaseModel):
     registrations: int
     paid_registrations: int
     refund_total: Decimal
-    

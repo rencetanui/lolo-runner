@@ -1,6 +1,6 @@
 import logging
 import uuid
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
 
 from sqlalchemy import and_, delete, or_, select
 from sqlalchemy.exc import IntegrityError
@@ -35,8 +35,13 @@ def _url(path: str) -> str:
 
 
 def _fmt(value) -> str:
-    return templates.fmt_date(value) if isinstance(value, date) else str(value)
-
+    if value is None:
+        return "not set"
+    if isinstance(value, date):
+        return templates.fmt_date(value)
+    if isinstance(value, time):
+        return value.strftime("%H:%M")
+    return str(value)
 
 # ----------------------------------------------------------------- queueing
 # These functions only add rows to the caller's transaction. The caller commits, so a message
@@ -216,30 +221,45 @@ def notify_refund_rejected(db: Session, refund) -> None:
         log.exception("Could not queue the refund-rejected notice for refund %s", refund.id)
 
 
+def _notify_changes(db: Session, event: Event, shown: list, extra_filters: tuple = ()) -> None:
+    batch = uuid.uuid4().hex[:12]
+    rows = db.execute(
+        select(Registration, User, RunnerProfile)
+        .join(User, User.id == Registration.user_id)
+        .outerjoin(RunnerProfile, RunnerProfile.user_id == Registration.user_id)
+        .where(
+            Registration.event_id == event.id,
+            Registration.status != RegistrationStatus.cancelled,
+            *extra_filters,
+        )
+    ).all()
+    items: list[dict] = []
+    for reg, user, profile in rows:
+        rendered = templates.event_changed(
+            name=user.full_name, event_name=event.name, changes=shown,
+            url=_url(f"/registrations/{reg.id}"),
+        )
+        items += _items(user, profile, rendered, f"event_changed:{batch}:{reg.id}")
+    log.info("Queued %s notifications for the update to event %s", _enqueue_many(db, items), event.id)
+
+
 def notify_event_changed(db: Session, event: Event, changes: dict) -> None:
     """Tell everyone registered (or holding a spot) about a new date or location."""
     try:
         shown = [(CHANGE_LABELS[k], _fmt(old), _fmt(new)) for k, (old, new) in changes.items() if k in CHANGE_LABELS]
-        if not shown:
-            return
-        batch = uuid.uuid4().hex[:12]
-        rows = db.execute(
-            select(Registration, User, RunnerProfile)
-            .join(User, User.id == Registration.user_id)
-            .outerjoin(RunnerProfile, RunnerProfile.user_id == Registration.user_id)
-            .where(Registration.event_id == event.id, Registration.status != RegistrationStatus.cancelled)
-        ).all()
-        items: list[dict] = []
-        for reg, user, profile in rows:
-            rendered = templates.event_changed(
-                name=user.full_name, event_name=event.name, changes=shown,
-                url=_url(f"/registrations/{reg.id}"),
-            )
-            items += _items(user, profile, rendered, f"event_changed:{batch}:{reg.id}")
-        log.info("Queued %s notifications for the update to event %s", _enqueue_many(db, items), event.id)
+        if shown:
+            _notify_changes(db, event, shown)
     except Exception:
         log.exception("Could not queue the update notices for event %s", event.id)
 
+
+def notify_start_time_changed(db: Session, event: Event, distance, old, new) -> None:
+    """Tell only the runners registered for this distance."""
+    try:
+        shown = [(f"{distance.name} start time", _fmt(old), _fmt(new))]
+        _notify_changes(db, event, shown, (Registration.distance_id == distance.id,))
+    except Exception:
+        log.exception("Could not queue the start-time notices for distance %s", distance.id)
 
 def notify_email_verification(db: Session, user: User, token: str, token_id: uuid.UUID, hours: int) -> None:
     try:

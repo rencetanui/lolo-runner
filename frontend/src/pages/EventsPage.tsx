@@ -28,6 +28,14 @@ export default function EventsPage() {
         {data?.map((event) => (
           <Link key={event.id} to={`/events/${event.id}`}>
             <Card className="h-full transition hover:shadow-md">
+              {event.banner_url && (
+                <img 
+                  src={event.banner_url} 
+                  alt="" 
+                  loading="lazy" 
+                  className="h-36 w-full rounded-t-lg object-cover" 
+                />
+              )}
               <CardHeader>
                 <CardTitle>{event.name}</CardTitle>
                 <CardDescription>

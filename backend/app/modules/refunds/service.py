@@ -154,13 +154,14 @@ def mark_paid(db: Session, admin: User, refund_id: uuid.UUID, reference: str, no
     refund.admin_note = (note or "").strip()[:500] or None
     refund.decided_by = admin.id
     refund.decided_at = _now()
-    log_action(db, admin, "refund.paid", "refund", refund.id, reference=refund.mpesa_reference, amount=int(refund.amount))
-    notifications.notify_refund_paid(db, refund)
     try:
-        db.commit()
+        db.flush()        # a duplicate reference surfaces here, before anything else touches the session
     except IntegrityError:
         db.rollback()
         raise RefundError("duplicate_reference", "That M-Pesa reference is already recorded on another refund.", 409)
+    log_action(db, admin, "refund.paid", "refund", refund.id, reference=refund.mpesa_reference, amount=int(refund.amount))
+    notifications.notify_refund_paid(db, refund)
+    db.commit()
     return refund
 
 

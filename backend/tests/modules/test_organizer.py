@@ -209,7 +209,7 @@ def test_published_event_keeps_one_distance(org):
     event = create_event(org, distances=[{"name": "5K", "km": 5, "fee": 0, "capacity": 5}])
     publish(org, event)
     res = org.delete(f"{BASE}/{event['id']}/distances/{event['distances'][0]['id']}")
-    assert res.status_code == 409 and code(res) == "last_distance"
+    assert res.status_code == 409 and code(res) == "last_distance", res.text
 
 
 def test_unpublish_blocked_with_registrations(org):

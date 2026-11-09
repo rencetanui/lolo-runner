@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -159,10 +159,23 @@ def apply_result(
             db.commit()
             return payment
 
-    payment.status = PaymentStatus.succeeded
     receipt = metadata.get("MpesaReceiptNumber")
-    payment.mpesa_receipt = str(receipt) if receipt else None
+    receipt = str(receipt) if receipt else None
+    if receipt and db.scalar(
+        select(func.count(Payment.id)).where(Payment.mpesa_receipt == receipt, Payment.id != payment.id)
+    ):
+        reason = f"M-Pesa receipt {receipt} is already recorded on another payment."
+        payment.status = PaymentStatus.needs_review
+        payment.result_desc = reason[:255]
+        log.error("Payment %s: %s", payment.id, reason)
+        log_action(db, None, "payment.flagged", "payment", payment.id, reason=reason)
+        notifications.notify_admins_payment_problem(db, payment, "needs_review", reason)
+        db.commit()
+        return payment
 
+    payment.status = PaymentStatus.succeeded
+    payment.mpesa_receipt = receipt
+    
     # of=Registration: only lock this table, not its eagerly-joined event/distance
     reg = db.scalars(
         select(Registration).where(Registration.id == payment.registration_id).with_for_update(of=Registration)
@@ -279,6 +292,11 @@ def resolve_review(
         payment.status = PaymentStatus.succeeded
         if receipt:
             payment.mpesa_receipt = receipt
+        try:
+            db.flush()    # a duplicate receipt surfaces here
+        except IntegrityError:
+            db.rollback()
+            raise PaymentError("duplicate_receipt", "That M-Pesa reference is already recorded on another payment.", 409)
         reg = db.scalars(
             select(Registration).where(Registration.id == payment.registration_id).with_for_update(of=Registration)
         ).first()
@@ -292,11 +310,7 @@ def resolve_review(
             db, admin, "payment.confirmed", "payment", payment.id,
             note=payment.admin_note, receipt=payment.mpesa_receipt, needs_refund=payment.needs_refund,
         )
-    try:
-        db.commit()
-    except IntegrityError:
-        db.rollback()
-        raise PaymentError("duplicate_receipt", "That M-Pesa reference is already recorded on another payment.", 409)
+    db.commit()
     return payment
 
 

@@ -29,6 +29,14 @@ function DistanceRow({ eventId, d }: { eventId: string; d: DistanceAdmin }) {
     if (Number(draft.fee) !== Number(d.fee)) changes.fee = Number(draft.fee)
     if (Number(draft.capacity) !== d.capacity) changes.capacity = Number(draft.capacity)
     if (Number(draft.min_age) !== d.min_age) changes.min_age = Number(draft.min_age)
+    
+    const startNow = draft.start_time || null
+    const startWas = d.start_time ? d.start_time.slice(0, 5) : null
+    if (startNow !== startWas) changes.start_time = startNow
+    
+    const cutoffNow = draft.cutoff_minutes ? Number(draft.cutoff_minutes) : null
+    if (cutoffNow !== (d.cutoff_minutes ?? null)) changes.cutoff_minutes = cutoffNow
+    
     update.mutate({ distanceId: d.id, changes })
   }
 
@@ -56,7 +64,7 @@ function DistanceRow({ eventId, d }: { eventId: string; d: DistanceAdmin }) {
         {taken > 0 && (
           <p className="text-xs text-muted-foreground">
             Name, distance and minimum age are locked because runners have registered. Fee changes apply to new
-            registrations only.
+            registrations only. Changing the start time tells runners already registered for this distance.
           </p>
         )}
         {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
@@ -108,8 +116,11 @@ export function DistanceManager({ event }: { event: OrganizerEvent }) {
         <p className="text-sm text-muted-foreground">No distances yet. Add one before publishing.</p>
       )}
       {event.distances.map((d) => (
-        // The key includes the saved values, so a row resets to the server's numbers after each save.
-        <DistanceRow key={`${d.id}-${d.name}-${d.km}-${d.fee}-${d.capacity}-${d.min_age}`} eventId={event.id} d={d} />
+        <DistanceRow 
+          key={`${d.id}-${d.name}-${d.km}-${d.fee}-${d.capacity}-${d.min_age}-${d.start_time}-${d.cutoff_minutes}`} 
+          eventId={event.id} 
+          d={d} 
+        />
       ))}
       <AddDistance eventId={event.id} />
     </section>

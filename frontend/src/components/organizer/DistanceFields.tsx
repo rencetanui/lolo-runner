@@ -24,7 +24,7 @@ export function DistanceFields({
     onChange({ ...value, [key]: e.target.value })
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
       <Field id={`${idPrefix}-name`} label="Name">
         <Input id={`${idPrefix}-name`} placeholder="10K" value={value.name} onChange={set("name")} disabled={lockBasics} />
       </Field>
@@ -43,6 +43,13 @@ export function DistanceFields({
       <Field id={`${idPrefix}-age`} label="Min. age">
         <Input id={`${idPrefix}-age`} type="number" inputMode="numeric" min="0" max="100" step="1"
           value={value.min_age} onChange={set("min_age")} disabled={lockBasics} />
+      </Field>
+      <Field id={`${idPrefix}-start`} label="Start time">
+        <Input id={`${idPrefix}-start`} type="time" value={value.start_time} onChange={set("start_time")} />
+      </Field>
+      <Field id={`${idPrefix}-cutoff`} label="Cut-off (min)">
+        <Input id={`${idPrefix}-cutoff`} type="number" inputMode="numeric" min="15" max="1440" step="1"
+          value={value.cutoff_minutes} onChange={set("cutoff_minutes")} />
       </Field>
     </div>
   )

@@ -1,5 +1,5 @@
 import uuid
-from datetime import date
+from datetime import date, time
 from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict
@@ -15,6 +15,8 @@ class DistanceOut(BaseModel):
     fee: Decimal
     capacity: int
     min_age: int
+    start_time: time | None
+    cutoff_minutes: int | None
 
 
 class EventOut(BaseModel):
@@ -30,3 +32,9 @@ class EventOut(BaseModel):
     status: EventStatus
     refunds_until: date | None
     cancellation_reason: str | None
+    description: str | None
+    venue_details: str | None
+    map_url: str | None
+    contact_email: str | None
+    contact_phone: str | None
+    banner_url: str | None

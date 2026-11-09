@@ -20,7 +20,9 @@ class Settings(BaseSettings):
     mpesa_callback_secret: str = ""
     mpesa_verify_callbacks: bool | None = None   # None = on in production, off elsewhere
     mpesa_callback_ips: str = ""                 # comma-separated allowlist. Empty = no IP check.
-
+    media_dir: str = "media"
+    max_upload_mb: int = 5
+    
     public_base_url: str = ""            # public HTTPS URL of this API (your tunnel URL in dev)
     
     google_client_id: str = ""
