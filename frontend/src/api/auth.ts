@@ -33,7 +33,7 @@ export function useLogin() {
 export function useSignup() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async (body: { full_name: string; email: string; password: string }) => {
+    mutationFn: async (body: { full_name: string; email: string; password: string; accept_terms: boolean }) => {
       const { data, error, response } = await api.POST("/api/v1/auth/signup", { body })
       if (response.status === 409) throw new Error("An account with this email already exists")
       if (response.status === 429) throw toApiError(error, "Too many attempts. Please try again later.")
@@ -122,8 +122,20 @@ export function useGoogleLogin() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (credential: string) => {
-      const { data, error } = await api.POST("/api/v1/auth/google", { body: { credential } })
+      const { data, error } = await api.POST("/api/v1/auth/google", { body: { credential, accept_terms: true } })
       if (!data) throw toApiError(error, "Could not sign in with Google. Please try again.")
+      return data
+    },
+    onSuccess: (user) => qc.setQueryData(["me"], user),
+  })
+}
+
+export function useAcceptTerms() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async () => {
+      const { data, error } = await api.POST("/api/v1/auth/accept-terms")
+      if (!data) throw toApiError(error, "Could not save your choice. Please try again.")
       return data
     },
     onSuccess: (user) => qc.setQueryData(["me"], user),

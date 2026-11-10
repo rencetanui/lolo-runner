@@ -288,3 +288,48 @@ def payment_alert(*, kind: str, amount: Decimal, receipt: str | None, reason: st
         text="\n".join([title, "", *lines, "", f"Open it: {url}"]),
         html=_page(title, lines, ("Open in admin", url)),
     )
+    
+def data_exported(*, name: str, url: str) -> Rendered:
+    intro = f"Hi {_first(name)}, a copy of your {settings.app_name} data was just downloaded from your account."
+    note = "If that was you, there's nothing more to do. If it wasn't, reset your password straight away."
+    return Rendered(
+        subject="Your data was downloaded",
+        text="\n".join([intro, "", note, "", f"Reset your password: {url}"]),
+        html=_page("Your data was downloaded", [intro, note], ("Reset your password", url)),
+    )
+
+
+def deletion_request(*, name: str, url: str, minutes: int) -> Rendered:
+    intro = f"Hi {_first(name)}, we received a request to permanently delete your {settings.app_name} account."
+    note = (
+        f"To confirm, open the link below while you're logged in. It works once and expires in {minutes} minutes. "
+        "If you didn't ask for this, ignore this email: nothing will be deleted."
+    )
+    return Rendered(
+        subject="Confirm account deletion",
+        text="\n".join([intro, "", f"Confirm deletion: {url}", "", note]),
+        html=_page("Confirm account deletion", [intro, note], ("Confirm deletion", url)),
+    )
+
+
+def account_deleted(*, name: str) -> Rendered:
+    intro = f"Hi {_first(name)}, your {settings.app_name} account has been deleted."
+    note = (
+        "We've removed your profile, contact details and messages. Payment and registration records are kept "
+        "for our financial records, with your personal details removed."
+    )
+    return Rendered(
+        subject="Your account was deleted",
+        text="\n".join([intro, "", note]),
+        html=_page("Account deleted", [intro, note]),
+    )
+
+
+def support_alert(*, topic: str, name: str, email: str, message: str, reference: str, url: str) -> Rendered:
+    title = f"Support message ({topic})"
+    lines = [f"From: {name} ({email})", f"Reference: {reference}"]
+    return Rendered(
+        subject=f"Support: {topic} ({reference})",
+        text="\n".join([title, "", *lines, "", message, "", f"Open the inbox: {url}"]),
+        html=_page(title, [*lines, message], ("Open inbox", url)),
+    )

@@ -13,6 +13,7 @@ from app.modules.payments.service import PaymentError
 from app.modules.refunds.models import Refund, RefundStatus
 from app.modules.refunds.service import RefundError
 from app.modules.registrations.models import Registration
+from app.modules.support.service import open_count as support_open_count
 from app.utils.csvsafe import csv_safe
 from app.utils.dates import KENYA_TZ
 
@@ -48,6 +49,7 @@ def summary(db: Session) -> AdminSummary:
         needs_refund=count(Payment.needs_refund.is_(True)),
         stuck_pending=count(_stuck(now)),
         failed_24h=count(Payment.status == PaymentStatus.failed, Payment.completed_at > now - timedelta(hours=24)),
+        support_open=support_open_count(db),
         refunds_requested=db.scalar(
             select(func.count(Refund.id)).where(Refund.status == RefundStatus.requested)
         ) or 0,

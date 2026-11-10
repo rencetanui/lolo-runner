@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from sqlalchemy import BigInteger, DateTime, Enum, ForeignKey, String, func, UniqueConstraint, true
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.modules.legal.versions import LEGAL_VERSION
 from app.db.base import Base
 
 
@@ -28,7 +29,15 @@ class User(Base):
     token_version: Mapped[int] = mapped_column(default=0, server_default="0")
     # False for accounts created through Google: they have a random password nobody knows.
     has_password: Mapped[bool] = mapped_column(default=True, server_default=true())
+    legal_version: Mapped[str | None] = mapped_column(String(30))
+    legal_accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    @property
+    def needs_terms(self) -> bool:
+        return self.legal_version != LEGAL_VERSION
+    
 
     @property
     def email_verified(self) -> bool:
@@ -38,6 +47,7 @@ class User(Base):
 class TokenPurpose(str, enum.Enum):
     password_reset = "password_reset"
     email_verify = "email_verify"
+    account_delete = "account_delete"
 
 
 def _utcnow() -> datetime:

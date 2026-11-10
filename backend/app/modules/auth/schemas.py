@@ -10,7 +10,7 @@ class SignupIn(BaseModel):
     full_name: str = Field(min_length=2, max_length=100)
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
-
+    accept_terms: bool = False
 
 class LoginIn(BaseModel):
     email: EmailStr
@@ -48,11 +48,12 @@ class UserOut(BaseModel):
     role: Role
     email_verified: bool
     has_password: bool
+    needs_terms: bool
     created_at: datetime
     
 class GoogleLoginIn(BaseModel):
     credential: str = Field(min_length=20, max_length=4096)
-
+    accept_terms: bool = False
 
 class GoogleConfigOut(BaseModel):
     enabled: bool

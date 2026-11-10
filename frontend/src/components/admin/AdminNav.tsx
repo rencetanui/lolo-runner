@@ -10,5 +10,5 @@ export function AdminNav() {
       {label}
     </Link>
   )
-  return <nav className="flex gap-2">{item("/admin/payments", "Payments")}{item("/admin/refunds", "Refunds")}</nav>
+  return <nav className="flex gap-2">{item("/admin/payments", "Payments")}{item("/admin/refunds", "Refunds")}{item("/admin/support", "Support")}</nav>
 }

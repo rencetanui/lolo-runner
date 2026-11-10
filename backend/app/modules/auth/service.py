@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.security import DUMMY_HASH, hash_password, verify_password
 from app.modules.notifications import service as notifications
+from app.modules.legal.versions import LEGAL_VERSION
 
 from .models import AuthToken, RateLimit, TokenPurpose, User, UserIdentity
 from .schemas import SignupIn
@@ -85,12 +86,16 @@ def send_verification_email(db: Session, user: User) -> bool:
 
 
 def create_user(db: Session, data: SignupIn) -> User:
+    if settings.require_terms_acceptance and not data.accept_terms:
+        raise AuthError("terms_required", "Please accept the Terms and Privacy Notice to create an account.", 422)
     if get_by_email(db, data.email):
         raise EmailTakenError
     user = User(
         full_name=data.full_name.strip(),
         email=data.email.lower(),
         hashed_password=hash_password(data.password),
+        legal_version=LEGAL_VERSION if data.accept_terms else None,
+        legal_accepted_at=_now() if data.accept_terms else None,
     )
     db.add(user)
     db.flush()
@@ -99,7 +104,6 @@ def create_user(db: Session, data: SignupIn) -> User:
     db.commit()
     db.refresh(user)
     return user
-
 
 def authenticate(db: Session, email: str, password: str) -> User | None:
     user = get_by_email(db, email)
@@ -235,7 +239,7 @@ def _display_name(info: dict, email: str) -> str:
     return name if len(name) >= 2 else email.split("@")[0][:100]
 
 
-def google_sign_in(db: Session, credential: str, *, _retry: bool = True) -> User:
+def google_sign_in(db: Session, credential: str, accept_terms: bool =False, *, _retry: bool = True) -> User:
     info = verify_google_credential(credential)
     sub = str(info.get("sub") or "")
     email = str(info.get("email") or "").lower()
@@ -281,12 +285,16 @@ def google_sign_in(db: Session, credential: str, *, _retry: bool = True) -> User
             log.info("google linked user=%s", user.id)
             return user
 
+        if settings.require_terms_acceptance and not accept_terms:
+            raise AuthError("terms_required", "Please accept the Terms and Privacy Notice to create an account.", 422)
         user = User(
             full_name=_display_name(info, email),
             email=email,
             hashed_password=hash_password(secrets.token_urlsafe(32)),
             has_password=False,
             email_verified_at=_now() if authoritative else None,
+            legal_version=LEGAL_VERSION if accept_terms else None,
+            legal_accepted_at=_now() if accept_terms else None,
         )
         db.add(user)
         db.flush()
@@ -300,5 +308,16 @@ def google_sign_in(db: Session, credential: str, *, _retry: bool = True) -> User
     except IntegrityError:           # two sign-ins for a new account raced each other
         db.rollback()
         if _retry:
-            return google_sign_in(db, credential, _retry=False)
+            return google_sign_in(db, credential, accept_terms, _retry=False)
         raise
+    
+def accept_terms(db: Session, user: User) -> User:
+    user.legal_version = LEGAL_VERSION
+    user.legal_accepted_at = _now()
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def usable_token(db: Session, raw: str, purpose: TokenPurpose) -> AuthToken | None:
+    return _usable_token(db, raw, purpose)

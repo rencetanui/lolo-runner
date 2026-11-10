@@ -11,6 +11,8 @@ export type PaymentFilters = { status?: PaymentStatus | ""; attention?: boolean;
 export type AdminRefund = S["AdminRefundOut"]
 export type AdminRefundDetail = S["AdminRefundDetail"]
 export type RefundStatus = AdminRefund["status"]
+export type AdminSupport = S["AdminSupportOut"]
+export type SupportStatus = AdminSupport["status"]
 
 export const PAGE_SIZE = 25
 
@@ -187,6 +189,38 @@ export function useCreateRefund(paymentId: string) {
       qc.invalidateQueries({ queryKey: ["admin", "payment", paymentId] })
       qc.invalidateQueries({ queryKey: ["admin", "payments"] })
       qc.invalidateQueries({ queryKey: ["admin", "refunds"] })
+      qc.invalidateQueries({ queryKey: ["admin", "summary"] })
+    },
+  })
+}
+
+export function useAdminSupport(f: { status?: SupportStatus | ""; page: number }) {
+  return useQuery({
+    queryKey: ["admin", "support", f],
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      const { data } = await api.GET("/api/v1/admin/support", {
+        params: { query: { status: f.status || undefined, page: f.page, page_size: PAGE_SIZE } },
+      })
+      if (!data) throw new Error("Could not load messages")
+      return data
+    },
+  })
+}
+
+export function useResolveSupport() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, note }: { id: string; note: string | null }) => {
+      const { data, error } = await api.POST("/api/v1/admin/support/{message_id}/resolve", {
+        params: { path: { message_id: id } },
+        body: { note },
+      })
+      if (!data) throw toApiError(error, "Could not resolve this message.")
+      return data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "support"] })
       qc.invalidateQueries({ queryKey: ["admin", "summary"] })
     },
   })

@@ -101,6 +101,13 @@ def register(db: Session, user: User, event_id: uuid.UUID, data: RegistrationIn)
     if not profile:
         raise RegistrationError("profile_required", "Complete your runner profile before registering")
 
+    if settings.require_terms_acceptance and user.needs_terms:
+        raise RegistrationError(
+            "terms_not_accepted",
+            "Please accept the updated Terms and Privacy Notice before registering.",
+            403,
+        )
+        
     today = today_ke()
     if today < event.registration_opens:
         raise RegistrationError("registration_not_open", "Registration for this event hasn't opened yet")

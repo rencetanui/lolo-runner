@@ -48,4 +48,6 @@ class Settings(BaseSettings):
     verify_token_hours: int = 48
     reset_token_minutes: int = 60
     trusted_proxies: int = 0     # how many reverse proxies sit in front of the API (0 in development)
+    require_terms_acceptance: bool = True
+    
 settings = Settings()   

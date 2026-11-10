@@ -137,6 +137,10 @@ def google_login(data: GoogleLoginIn, request: Request, response: Response, db: 
         raise service.AuthError("google_not_configured", "Google sign-in isn't available.", 503)
     # Generous: many phones share one mobile-carrier address.
     hit(db, "google:ip", client_ip(request), limit=300, window=HOUR)
-    user = service.google_sign_in(db, data.credential)
+    user = service.google_sign_in(db, data.credential, data.accept_terms)
     _set_session_cookie(response, user)
     return user
+
+@router.post("/accept-terms", response_model=UserOut)
+def accept_terms(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return service.accept_terms(db, user)

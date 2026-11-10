@@ -38,3 +38,12 @@ def require_role(*roles: Role):
             raise HTTPException(status.HTTP_403_FORBIDDEN, "Not allowed")
         return user
     return checker
+
+def get_optional_user(
+    access_token: str | None = Cookie(default=None),
+    db: Session = Depends(get_db),
+) -> User | None:
+    try:
+        return get_current_user(access_token, db)
+    except HTTPException:
+        return None

@@ -7,18 +7,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { GoogleSignInButton } from "@/components/GoogleSignInButton"
+import { Checkbox } from "@/components/ui/checkbox"
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [accepted, setAccepted] = useState(false)
   const signup = useSignup()
   const navigate = useNavigate()
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     signup.mutate(
-      { full_name: fullName, email, password },
+      { full_name: fullName, email, password, accept_terms: true },
       { onSuccess: () => navigate("/", { replace: true }) },
     )
   }
@@ -33,25 +35,53 @@ export default function SignupPage() {
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
             {signup.error && (
-              <Alert variant="destructive"><AlertDescription>{signup.error.message}</AlertDescription></Alert>
+              <Alert variant="destructive">
+                <AlertDescription>{signup.error.message}</AlertDescription>
+              </Alert>
             )}
             <div className="space-y-2">
               <Label htmlFor="name">Full name</Label>
-              <Input id="name" autoComplete="name" required minLength={2}
-                value={fullName} onChange={(e) => setFullName(e.target.value)} />
+              <Input
+                id="name"
+                autoComplete="name"
+                required
+                minLength={2}
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" autoComplete="email" required
-                value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" autoComplete="new-password" required minLength={8}
-                value={password} onChange={(e) => setPassword(e.target.value)} />
+              <Input
+                id="password"
+                type="password"
+                autoComplete="new-password"
+                required
+                minLength={8}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
               <p className="text-xs text-muted-foreground">At least 8 characters.</p>
             </div>
-            <Button type="submit" className="w-full" disabled={signup.isPending}>
+            <div className="flex items-start gap-2">
+              <Checkbox id="terms" checked={accepted} onCheckedChange={(v) => setAccepted(v === true)} />
+              <Label htmlFor="terms" className="font-normal leading-snug">
+                I agree to the <Link to="/terms" className="underline">Terms</Link> and have read the{" "}
+                <Link to="/privacy" className="underline">Privacy Notice</Link>.
+              </Label>
+            </div>
+            <Button type="submit" className="w-full" disabled={signup.isPending || !accepted}>
               {signup.isPending ? "Creating account…" : "Sign up"}
             </Button>
             <p className="text-center text-sm text-muted-foreground">

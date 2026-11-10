@@ -27,6 +27,14 @@ import AdminPaymentPage from "./pages/AdminPaymentPage"
 import AdminPaymentsPage from "./pages/AdminPaymentsPage"
 import AdminRefundPage from "./pages/AdminRefundPage"
 import AdminRefundsPage from "./pages/AdminRefundsPage"
+import HelpPage from "./pages/HelpPage"
+import TermsPage from "./pages/TermsPage"
+import PrivacyPage from "./pages/PrivacyPage"
+import RefundPolicyPage from "./pages/RefundPolicyPage"
+import ConfirmDeletePage from "./pages/ConfirmDeletePage"
+import AdminSupportPage from "./pages/AdminSupportPage"
+import NotFoundPage from "./pages/NotFoundPage"
+
 import { Navigate } from "react-router-dom"
 
 const queryClient = new QueryClient()
@@ -45,16 +53,23 @@ createRoot(document.getElementById("root")!).render(
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/verify-email" element={<VerifyEmailPage />} />
+              <Route path="/help" element={<HelpPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/refund-policy" element={<RefundPolicyPage />} />
+
               <Route element={<ProtectedRoute />}>
                 <Route path="/account" element={<AccountPage />} />
                 <Route path="/account/profile" element={<ProfilePage />} />
                 <Route path="/events/:id/register" element={<RegisterPage />} />
                 <Route path="/registrations/:id" element={<RegistrationDetailPage />} />
                 <Route path="/account/password" element={<ChangePasswordPage />} />
+                <Route path="/confirm-delete" element={<ConfirmDeletePage />} />
                 <Route element={<RoleRoute roles={["organizer", "admin"]} />}>
                   <Route path="/organizer/events" element={<OrganizerEventsPage />} />
                   <Route path="/organizer/events/new" element={<OrganizerNewEventPage />} />
                   <Route path="/organizer/events/:id" element={<OrganizerEventPage />} />
+                  <Route path="/admin/support" element={<AdminSupportPage />} />
                 </Route>
                 <Route element={<RoleRoute roles={["admin"]} />}>
                   <Route path="/admin" element={<Navigate to="/admin/payments" replace />} />
@@ -64,6 +79,7 @@ createRoot(document.getElementById("root")!).render(
                   <Route path="/admin/refunds/:id" element={<AdminRefundPage />} />
                 </Route>
               </Route>
+              <Route path="*" element={<NotFoundPage />} />
             </Route>
           </Routes>
         </BrowserRouter>

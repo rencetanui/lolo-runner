@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { useGoogleConfig, useGoogleLogin } from "@/api/auth"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { loadGoogleIdentity } from "@/lib/googleIdentity"
+import { Link } from "react-router-dom"
 
 export function GoogleSignInButton({ onSignedIn }: { onSignedIn: () => void }) {
   const { data: config } = useGoogleConfig()
@@ -58,6 +59,10 @@ export function GoogleSignInButton({ onSignedIn }: { onSignedIn: () => void }) {
         <div className="h-px flex-1 bg-border" />
       </div>
       <div ref={holder} className="flex min-h-[44px] justify-center" />
+        <p className="text-center text-xs text-muted-foreground">
+          By continuing with Google you agree to the <Link to="/terms" className="underline">Terms</Link> and{" "}
+          <Link to="/privacy" className="underline">Privacy Notice</Link>.
+        </p>
       {login.isPending && <p className="text-center text-sm text-muted-foreground">Signing you in…</p>}
       {(login.error || loadError) && (
         <Alert variant="destructive">

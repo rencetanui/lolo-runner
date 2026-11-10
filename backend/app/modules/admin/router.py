@@ -13,6 +13,10 @@ from app.modules.payments.models import PaymentStatus
 from app.modules.payments.providers.mpesa import get_mpesa_client
 from app.modules.refunds import service as refunds
 from app.modules.refunds.models import RefundStatus
+from app.modules.support import service as support_service
+from app.modules.support.models import SupportStatus
+from app.modules.support.schemas import AdminSupportOut, ResolveSupportIn, SupportPage
+
 
 from . import service
 from .schemas import (
@@ -106,3 +110,18 @@ def mark_refund_paid(refund_id: uuid.UUID, data: MarkPaidIn, admin: AdminUser, d
 def reject_refund(refund_id: uuid.UUID, data: RejectRefundIn, admin: AdminUser, db: DB):
     refunds.reject(db, admin, refund_id, data.note)
     return service.get_refund(db, refund_id)
+
+@router.get("/support", response_model=SupportPage)
+def list_support(
+    admin: AdminUser,
+    db: DB,
+    status: SupportStatus | None = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(25, ge=1, le=100),
+):
+    return support_service.list_messages(db, status=status, page=page, page_size=page_size)
+
+
+@router.post("/support/{message_id}/resolve", response_model=AdminSupportOut)
+def resolve_support(message_id: uuid.UUID, data: ResolveSupportIn, admin: AdminUser, db: DB):
+    return support_service.resolve(db, admin, message_id, data.note)

@@ -444,3 +444,48 @@ def purge_old(db: Session, days: int = 90) -> int:
     )
     db.commit()
     return res.rowcount or 0
+
+def notify_data_exported(db: Session, user: User) -> None:
+    try:
+        rendered = templates.data_exported(name=user.full_name, url=_url("/forgot-password"))
+        _enqueue_many(db, _items(user, None, rendered, f"data_exported:{uuid.uuid4().hex}"))
+    except Exception:
+        log.exception("Could not queue the data-exported notice for user %s", user.id)
+
+
+def notify_account_deletion(db: Session, user: User, token: str, token_id: uuid.UUID, minutes: int) -> None:
+    try:
+        rendered = templates.deletion_request(
+            name=user.full_name, url=_url(f"/confirm-delete?token={token}"), minutes=minutes
+        )
+        _enqueue_many(db, _items(user, None, rendered, f"deletion_request:{token_id}", sensitive=True))
+    except Exception:
+        log.exception("Could not queue the deletion email for user %s", user.id)
+
+
+def notify_account_deleted(db: Session, email: str, name: str) -> None:
+    """Goes to the old address and is deliberately not linked to the (now anonymous) account."""
+    try:
+        rendered = templates.account_deleted(name=name)
+        _enqueue_many(db, [{
+            "user_id": None, "channel": Channel.email, "to": email,
+            "subject": rendered.subject, "text": rendered.text, "html": rendered.html,
+            "key": f"account_deleted:{uuid.uuid4().hex}:email",
+        }])
+    except Exception:
+        log.exception("Could not queue the account-deleted notice")
+
+
+def notify_admins_support_message(db: Session, msg) -> None:
+    try:
+        admins = list(db.scalars(select(User).where(User.role == Role.admin, User.is_active.is_(True))))
+        rendered = templates.support_alert(
+            topic=msg.topic.value, name=msg.name, email=msg.email, message=msg.message,
+            reference=str(msg.id)[:8].upper(), url=_url("/admin/support"),
+        )
+        items: list[dict] = []
+        for admin in admins:
+            items += _items(admin, None, rendered, f"support_alert:{msg.id}:{admin.id}")
+        _enqueue_many(db, items)
+    except Exception:
+        log.exception("Could not queue the support alert for message %s", msg.id)

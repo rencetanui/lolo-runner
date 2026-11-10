@@ -75,7 +75,7 @@ class AdminSummary(BaseModel):
     stuck_pending: int      # still waiting on M-Pesa after 10 minutes
     failed_24h: int
     refunds_requested: int  # refunds waiting for you to send the money
-
+    support_open: int
 
 class ResolveIn(BaseModel):
     action: Literal["confirm", "dismiss"]

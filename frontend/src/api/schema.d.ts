@@ -435,6 +435,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/organizer/events/{event_id}/banner": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Banner */
+        post: operations["upload_banner_api_v1_organizer_events__event_id__banner_post"];
+        /** Delete Banner */
+        delete: operations["delete_banner_api_v1_organizer_events__event_id__banner_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/organizer/events/{event_id}/distances": {
         parameters: {
             query?: never;
@@ -1019,6 +1037,11 @@ export interface components {
             /** Spots Left */
             spots_left: number;
         };
+        /** Body_upload_banner_api_v1_organizer_events__event_id__banner_post */
+        Body_upload_banner_api_v1_organizer_events__event_id__banner_post: {
+            /** File */
+            file: string;
+        };
         /** CancelEventIn */
         CancelEventIn: {
             /**
@@ -1082,6 +1105,10 @@ export interface components {
             held: number;
             /** Spots Left */
             spots_left: number;
+            /** Start Time */
+            start_time: string | null;
+            /** Cutoff Minutes */
+            cutoff_minutes: number | null;
         };
         /** DistanceBrief */
         DistanceBrief: {
@@ -1113,6 +1140,10 @@ export interface components {
              * @default 12
              */
             min_age: number;
+            /** Start Time */
+            start_time?: string | null;
+            /** Cutoff Minutes */
+            cutoff_minutes?: number | null;
         };
         /** DistanceOut */
         DistanceOut: {
@@ -1131,6 +1162,10 @@ export interface components {
             capacity: number;
             /** Min Age */
             min_age: number;
+            /** Start Time */
+            start_time: string | null;
+            /** Cutoff Minutes */
+            cutoff_minutes: number | null;
         };
         /** DistanceUpdate */
         DistanceUpdate: {
@@ -1144,6 +1179,10 @@ export interface components {
             capacity?: number | null;
             /** Min Age */
             min_age?: number | null;
+            /** Start Time */
+            start_time?: string | null;
+            /** Cutoff Minutes */
+            cutoff_minutes?: number | null;
         };
         /** EventAdminOut */
         EventAdminOut: {
@@ -1184,6 +1223,18 @@ export interface components {
             held: number;
             /** Distances */
             distances: components["schemas"]["DistanceAdminOut"][];
+            /** Description */
+            description: string | null;
+            /** Venue Details */
+            venue_details: string | null;
+            /** Map Url */
+            map_url: string | null;
+            /** Contact Email */
+            contact_email: string | null;
+            /** Contact Phone */
+            contact_phone: string | null;
+            /** Banner Url */
+            banner_url: string | null;
         };
         /** EventBrief */
         EventBrief: {
@@ -1204,6 +1255,16 @@ export interface components {
         };
         /** EventIn */
         EventIn: {
+            /** Description */
+            description?: string | null;
+            /** Venue Details */
+            venue_details?: string | null;
+            /** Map Url */
+            map_url?: string | null;
+            /** Contact Email */
+            contact_email?: string | null;
+            /** Contact Phone */
+            contact_phone?: string | null;
             /** Name */
             name: string;
             /**
@@ -1261,6 +1322,18 @@ export interface components {
             refunds_until: string | null;
             /** Cancellation Reason */
             cancellation_reason: string | null;
+            /** Description */
+            description: string | null;
+            /** Venue Details */
+            venue_details: string | null;
+            /** Map Url */
+            map_url: string | null;
+            /** Contact Email */
+            contact_email: string | null;
+            /** Contact Phone */
+            contact_phone: string | null;
+            /** Banner Url */
+            banner_url: string | null;
         };
         /** EventRef */
         EventRef: {
@@ -1308,6 +1381,16 @@ export interface components {
         };
         /** EventUpdate */
         EventUpdate: {
+            /** Description */
+            description?: string | null;
+            /** Venue Details */
+            venue_details?: string | null;
+            /** Map Url */
+            map_url?: string | null;
+            /** Contact Email */
+            contact_email?: string | null;
+            /** Contact Phone */
+            contact_phone?: string | null;
             /** Name */
             name?: string | null;
             /** Event Date */
@@ -2684,6 +2767,76 @@ export interface operations {
         };
     };
     unpublish_event_api_v1_organizer_events__event_id__unpublish_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventAdminOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_banner_api_v1_organizer_events__event_id__banner_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_banner_api_v1_organizer_events__event_id__banner_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventAdminOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_banner_api_v1_organizer_events__event_id__banner_delete: {
         parameters: {
             query?: never;
             header?: never;

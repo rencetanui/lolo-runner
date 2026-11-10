@@ -21,6 +21,11 @@ from app.modules.registrations.router import router as registrations_router
 from app.modules.registrations.service import RegistrationError
 from app.modules.runners.router import router as runners_router
 from app.modules.share.router import router as share_router
+from app.modules.account.router import router as account_router
+from app.modules.account.service import AccountError
+from app.modules.legal.router import router as legal_router
+from app.modules.support.router import router as support_router
+from app.modules.support.service import SupportError
 
 app = FastAPI(title="Lolo Runner API")
 
@@ -68,6 +73,9 @@ app.include_router(organizer_router, prefix="/api/v1")
 app.include_router(admin_router, prefix="/api/v1")
 app.include_router(refunds_router, prefix="/api/v1")
 app.include_router(share_router)
+app.include_router(account_router, prefix="/api/v1")
+app.include_router(legal_router, prefix="/api/v1")
+app.include_router(support_router, prefix="/api/v1")
 
 
 # Global Exception Handlers
@@ -126,6 +134,14 @@ async def payment_error_handler(request: Request, exc: PaymentError):
         content={"detail": {"code": exc.code, "message": exc.message}},
     )
 
+@app.exception_handler(AccountError)
+async def account_error_handler(request: Request, exc: AccountError):
+    return JSONResponse(status_code=exc.status_code, content={"detail": {"code": exc.code, "message": exc.message}})
+
+
+@app.exception_handler(SupportError)
+async def support_error_handler(request: Request, exc: SupportError):
+    return JSONResponse(status_code=exc.status_code, content={"detail": {"code": exc.code, "message": exc.message}})
 
 @app.get("/health")
 def health_check():

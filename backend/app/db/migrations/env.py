@@ -25,6 +25,8 @@ from app.modules.payments import models as payment_models
 from app.modules.notifications import models as _notification_models  # noqa: F401
 from app.modules.audit import models as audit_models
 from app.modules.refunds import models as refund_models
+from app.modules.support import models as support_models
+
 
 config.set_main_option("sqlalchemy.url", settings.database_url) 
 # for 'autogenerate' support
