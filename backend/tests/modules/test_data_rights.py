@@ -206,7 +206,8 @@ def test_deleting_anonymizes_the_account_but_keeps_the_money_trail(client, make_
     user = db.get(User, uid)
     assert user.email.startswith("deleted-") and user.email.endswith("@deleted.invalid")
     assert user.full_name == "Deleted user" and user.is_active is False and user.deleted_at is not None
-    assert db.scalars(select(RunnerProfile)).first() is None
+    assert db.scalars(select(RunnerProfile).where(RunnerProfile.user_id == uid)).first() is None
+    assert db.scalars(select(RunnerProfile)).first() is not None       # the admin's profile was left alone
     assert db.scalars(select(SupportMessage)).first() is None
     assert notes(db, "support_alert") == []                                    # the admins' copy goes too
     assert [n for n in db.scalars(select(Notification)) if n.user_id == uid] == []

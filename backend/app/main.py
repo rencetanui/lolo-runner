@@ -26,6 +26,14 @@ from app.modules.account.service import AccountError
 from app.modules.legal.router import router as legal_router
 from app.modules.support.router import router as support_router
 from app.modules.support.service import SupportError
+from app.core.config import deployment_problems, settings
+from app.core.observability import init_sentry
+from app.modules.ops.router import router as ops_router
+
+_problems = deployment_problems(settings)
+if _problems:
+    raise RuntimeError("Refusing to start with unsafe settings:\n - " + "\n - ".join(_problems))
+init_sentry("api")
 
 app = FastAPI(title="Lolo Runner API")
 
@@ -76,7 +84,7 @@ app.include_router(share_router)
 app.include_router(account_router, prefix="/api/v1")
 app.include_router(legal_router, prefix="/api/v1")
 app.include_router(support_router, prefix="/api/v1")
-
+app.include_router(ops_router)
 
 # Global Exception Handlers
 @app.exception_handler(RefundError)

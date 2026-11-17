@@ -1,0 +1,9 @@
+# Used by the web image, whose build context is the repository root.
+**/node_modules
+**/dist
+**/.venv
+**/__pycache__
+**/.env
+**/.env.*
+.git
+backend

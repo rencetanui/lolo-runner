@@ -225,6 +225,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/accept-terms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept Terms */
+        post: operations["accept_terms_api_v1_auth_accept_terms_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/runners/me": {
         parameters: {
             query?: never;
@@ -743,6 +760,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/support": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Support */
+        get: operations["list_support_api_v1_admin_support_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/support/{message_id}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resolve Support */
+        post: operations["resolve_support_api_v1_admin_support__message_id__resolve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/registrations/{registration_id}/cancellation-preview": {
         parameters: {
             query?: never;
@@ -771,6 +822,125 @@ export interface paths {
         get: operations["my_refund_api_v1_registrations__registration_id__refund_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export My Data */
+        get: operations["export_my_data_api_v1_account_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/name": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Change Name */
+        patch: operations["change_name_api_v1_account_name_patch"];
+        trace?: never;
+    };
+    "/api/v1/account/deletion-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Deletion Check */
+        get: operations["deletion_check_api_v1_account_deletion_check_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/delete-request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Request Deletion */
+        post: operations["request_deletion_api_v1_account_delete_request_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/delete-confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm Deletion */
+        post: operations["confirm_deletion_api_v1_account_delete_confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/legal/version": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Version */
+        get: operations["version_api_v1_legal_version_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/support": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send Message */
+        post: operations["send_message_api_v1_support_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1008,6 +1178,39 @@ export interface components {
             failed_24h: number;
             /** Refunds Requested */
             refunds_requested: number;
+            /** Support Open */
+            support_open: number;
+        };
+        /** AdminSupportOut */
+        AdminSupportOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Reference */
+            reference: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Name */
+            name: string;
+            /** Email */
+            email: string;
+            topic: components["schemas"]["SupportTopic"];
+            /** Message */
+            message: string;
+            status: components["schemas"]["SupportStatus"];
+            /** User Id */
+            user_id: string | null;
+            /** Resolved At */
+            resolved_at: string | null;
+            /** Resolved By Name */
+            resolved_by_name: string | null;
+            /** Admin Note */
+            admin_note: string | null;
         };
         /** AuditOut */
         AuditOut: {
@@ -1036,6 +1239,13 @@ export interface components {
             capacity: number;
             /** Spots Left */
             spots_left: number;
+        };
+        /** BlockerOut */
+        BlockerOut: {
+            /** Code */
+            code: string;
+            /** Message */
+            message: string;
         };
         /** Body_upload_banner_api_v1_organizer_events__event_id__banner_post */
         Body_upload_banner_api_v1_organizer_events__event_id__banner_post: {
@@ -1081,6 +1291,18 @@ export interface components {
         CreateRefundIn: {
             /** Note */
             note: string;
+        };
+        /** DeleteConfirmIn */
+        DeleteConfirmIn: {
+            /** Token */
+            token: string;
+        };
+        /** DeletionCheckOut */
+        DeletionCheckOut: {
+            /** Can Delete */
+            can_delete: boolean;
+            /** Blockers */
+            blockers: components["schemas"]["BlockerOut"][];
         };
         /** DistanceAdminOut */
         DistanceAdminOut: {
@@ -1428,6 +1650,11 @@ export interface components {
         GoogleLoginIn: {
             /** Credential */
             credential: string;
+            /**
+             * Accept Terms
+             * @default false
+             */
+            accept_terms: boolean;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -1455,6 +1682,11 @@ export interface components {
         MessageOut: {
             /** Message */
             message: string;
+        };
+        /** NameIn */
+        NameIn: {
+            /** Full Name */
+            full_name: string;
         };
         /** ParticipantOut */
         ParticipantOut: {
@@ -1674,6 +1906,11 @@ export interface components {
             /** Mpesa Receipt */
             mpesa_receipt?: string | null;
         };
+        /** ResolveSupportIn */
+        ResolveSupportIn: {
+            /** Note */
+            note?: string | null;
+        };
         /**
          * Role
          * @enum {string}
@@ -1750,7 +1987,56 @@ export interface components {
             email: string;
             /** Password */
             password: string;
+            /**
+             * Accept Terms
+             * @default false
+             */
+            accept_terms: boolean;
         };
+        /** SupportCreatedOut */
+        SupportCreatedOut: {
+            /** Reference */
+            reference: string;
+            /** Message */
+            message: string;
+        };
+        /** SupportIn */
+        SupportIn: {
+            /** Name */
+            name: string;
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** @default other */
+            topic: components["schemas"]["SupportTopic"];
+            /** Message */
+            message: string;
+            /**
+             * Website
+             * @description Spam trap: real people leave it empty.
+             * @default
+             */
+            website: string;
+        };
+        /** SupportPage */
+        SupportPage: {
+            /** Items */
+            items: components["schemas"]["AdminSupportOut"][];
+            /** Total */
+            total: number;
+        };
+        /**
+         * SupportStatus
+         * @enum {string}
+         */
+        SupportStatus: "open" | "resolved";
+        /**
+         * SupportTopic
+         * @enum {string}
+         */
+        SupportTopic: "registration" | "payment" | "refund" | "account" | "event" | "other";
         /**
          * TShirtSize
          * @enum {string}
@@ -1775,6 +2061,8 @@ export interface components {
             email_verified: boolean;
             /** Has Password */
             has_password: boolean;
+            /** Needs Terms */
+            needs_terms: boolean;
             /**
              * Created At
              * Format: date-time
@@ -1798,6 +2086,11 @@ export interface components {
         VerifyEmailIn: {
             /** Token */
             token: string;
+        };
+        /** VersionOut */
+        VersionOut: {
+            /** Version */
+            version: string;
         };
         /** WaiverOut */
         WaiverOut: {
@@ -2191,6 +2484,37 @@ export interface operations {
                 "application/json": components["schemas"]["GoogleLoginIn"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_terms_api_v1_auth_accept_terms_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -3503,6 +3827,78 @@ export interface operations {
             };
         };
     };
+    list_support_api_v1_admin_support_get: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["SupportStatus"] | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupportPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolve_support_api_v1_admin_support__message_id__resolve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveSupportIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminSupportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     cancellation_preview_api_v1_registrations__registration_id__cancellation_preview_get: {
         parameters: {
             query?: never;
@@ -3556,6 +3952,224 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefundOut"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_my_data_api_v1_account_export_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_name_api_v1_account_name_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NameIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    deletion_check_api_v1_account_deletion_check_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeletionCheckOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_deletion_api_v1_account_delete_request_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_deletion_api_v1_account_delete_confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteConfirmIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    version_api_v1_legal_version_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionOut"];
+                };
+            };
+        };
+    };
+    send_message_api_v1_support_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupportIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupportCreatedOut"];
                 };
             };
             /** @description Validation Error */

@@ -7,13 +7,16 @@ from dataclasses import dataclass
 
 from sqlalchemy.orm import Session
 
+from app.core.config import deployment_problems, settings
+from app.core.observability import init_sentry
 from app.db.session import SessionLocal
+from app.modules.auth import service as auth_service
 from app.modules.notifications import service as notifications
 from app.modules.notifications.providers import get_email_sender, get_sms_sender
+from app.modules.ops import service as ops_service
 from app.modules.payments import service as payments
 from app.modules.payments.providers.mpesa import get_mpesa_client
 from app.modules.registrations.service import expire_stale
-from app.modules.auth import service as auth_service
 from app.modules.support import service as support_service
 
 log = logging.getLogger("worker")
@@ -46,11 +49,18 @@ def queue_reminders(db: Session):
 def purge_notifications(db: Session):
     return notifications.purge_old(db)
 
+
 def purge_security_data(db: Session):
     return auth_service.purge_expired(db)
 
+
 def purge_support(db: Session):
     return support_service.purge_resolved(db)
+
+
+def record_heartbeat(db: Session):
+    ops_service.beat(db)
+
 
 JOBS = [
     Job("send_notifications", 5, send_notifications),
@@ -60,6 +70,7 @@ JOBS = [
     Job("purge_notifications", 3600, purge_notifications),
     Job("purge_security_data", 3600, purge_security_data),
     Job("purge_support", 3600, purge_support),
+    Job("heartbeat", 30, record_heartbeat),
 ]
 
 
@@ -70,6 +81,11 @@ def _noteworthy(result: object) -> bool:
 
 
 def main() -> None:
+    problems = deployment_problems(settings)
+    if problems:
+        raise SystemExit("Refusing to start with unsafe settings:\n - " + "\n - ".join(problems))
+    init_sentry("worker")
+
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     stopping = False
 

@@ -1,0 +1,35 @@
+# OPTIONAL local helpers: a PostgreSQL database and a mail catcher.
+#
+#   docker compose -f docker-compose.dev.yml up -d
+#
+# WARNING: this starts a NEW, EMPTY database. If your current Postgres already works, you do not need this file.
+# Mail you send in development appears at http://localhost:8025 (set SMTP_HOST=localhost, SMTP_PORT=1025).
+name: lolo-dev
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: lolo_runner
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d lolo_runner"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # web inbox
+
+volumes:
+  pgdata:

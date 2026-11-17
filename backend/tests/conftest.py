@@ -1,3 +1,4 @@
+import os
 from datetime import date, timedelta
 from decimal import Decimal
 
@@ -21,18 +22,30 @@ from app.modules.refunds import models as _refund_models
 from app.modules.support import models as _support_models
 from app.core.config import settings
 from app.modules.audit import models as _audit_models
+from app.modules.ops import models as _ops_models  # noqa: F401
+
+TEST_DATABASE_URL = os.environ.get("TEST_DATABASE_URL")
+
+if TEST_DATABASE_URL and not TEST_DATABASE_URL.split("?")[0].rsplit("/", 1)[-1].endswith("_test"):
+    raise RuntimeError(
+        "TEST_DATABASE_URL must point at a database whose name ends in _test: the tests drop every table in it."
+    )
+
 
 @pytest.fixture
 def db():
-    engine = create_engine(
-        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
-    )
-    Base.metadata.create_all(engine)
+    if TEST_DATABASE_URL:
+        engine = create_engine(TEST_DATABASE_URL)
+        Base.metadata.drop_all(engine)
+        Base.metadata.create_all(engine)
+    else:
+        engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+        Base.metadata.create_all(engine)
     session = sessionmaker(bind=engine, expire_on_commit=False)()
     yield session
     session.close()
     Base.metadata.drop_all(engine)
-
+    engine.dispose()
 
 @pytest.fixture
 def client(db):

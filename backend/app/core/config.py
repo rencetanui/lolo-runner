@@ -50,4 +50,44 @@ class Settings(BaseSettings):
     trusted_proxies: int = 0     # how many reverse proxies sit in front of the API (0 in development)
     require_terms_acceptance: bool = True
     
+    
+    environment: str = "development"      # development | staging | production
+    sentry_dsn: str = ""
 settings = Settings()   
+
+def deployment_problems(s: Settings) -> list[str]:
+    """Settings that must never be wrong on a real server. An empty list means fine."""
+    if s.environment not in ("staging", "production"):
+        return []
+    problems: list[str] = []
+    if len(s.secret_key) < 32 or s.secret_key.lower().startswith(("replace", "change", "dev", "test")):
+        problems.append("SECRET_KEY must be a long random value (at least 32 characters).")
+    if not s.cookie_secure:
+        problems.append("COOKIE_SECURE must be true, so session cookies only travel over HTTPS.")
+    if s.trusted_proxies < 1:
+        problems.append("TRUSTED_PROXIES must be 1 behind Caddy, or every visitor looks like one IP to the rate limiter.")
+    for name in ("frontend_url", "public_base_url"):
+        if not getattr(s, name).startswith("https://"):
+            problems.append(f"{name.upper()} must start with https://")
+    if not s.cors_origins or any(not origin.startswith("https://") for origin in s.cors_origins):
+        problems.append("CORS_ORIGINS must list only your https:// site.")
+    if len(s.mpesa_callback_secret) < 24:
+        problems.append("MPESA_CALLBACK_SECRET must be a long random value (at least 24 characters).")
+    if not s.require_email_verification:
+        problems.append("REQUIRE_EMAIL_VERIFICATION must be true.")
+    if not s.require_terms_acceptance:
+        problems.append("REQUIRE_TERMS_ACCEPTANCE must be true.")
+    if s.environment == "production":
+        if s.mpesa_env != "production":
+            problems.append(f"MPESA_ENV is '{s.mpesa_env}'. Production must use 'production'.")
+        else:
+            missing = [n for n, v in (
+                ("MPESA_CONSUMER_KEY", s.mpesa_consumer_key), ("MPESA_CONSUMER_SECRET", s.mpesa_consumer_secret),
+                ("MPESA_SHORTCODE", s.mpesa_shortcode), ("MPESA_PASSKEY", s.mpesa_passkey)) if not v]
+            if missing:
+                problems.append("Missing M-Pesa settings: " + ", ".join(missing) + ".")
+        if s.email_backend != "smtp" or s.smtp_host in ("", "localhost"):
+            problems.append("EMAIL_BACKEND must be 'smtp' with a real SMTP_HOST, or nobody receives any email.")
+        if s.sms_backend != "africastalking" or s.at_env != "production" or not s.at_api_key:
+            problems.append("SMS must use Africa's Talking in production mode (SMS_BACKEND, AT_ENV, AT_API_KEY).")
+    return problems

@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { Link } from "react-router-dom"
 import { PAGE_SIZE, useAdminPayments, useAdminSummary, type PaymentFilters, type PaymentStatus } from "@/api/admin"
 import { PaymentStatusBadge } from "@/components/admin/PaymentStatusBadge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -23,7 +23,6 @@ export default function AdminPaymentsPage() {
   const [search, setSearch] = useState("")
   const [range, setRange] = useState({ start: "", end: "" })
   const summary = useAdminSummary()
-  const navigate = useNavigate()
   const { data, isLoading, error } = useAdminPayments(filters)
   const pages = Math.max(1, Math.ceil((data?.total ?? 0) / PAGE_SIZE))
   const show = (next: Partial<PaymentFilters>) => setFilters({ page: 1, ...next })
